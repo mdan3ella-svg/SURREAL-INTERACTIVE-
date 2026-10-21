@@ -1361,8 +1361,8 @@ refresh();
 (()=>{'use strict';
 const A=window.SI,T=A?.THREE;if(!A||!T)return;
 const root=document.getElementById('side'),tab=document.getElementById('tab');
-const state={ao:false,aoStrength:1.05,aoRadius:2.2,ssr:false,ssrStrength:.27,water:false,waveHeight:.14,waveSpeed:1.0,waterSize:32,waterY:.06,waterColor:'#438d9e',background:'',backgroundMode:'cover',audio:'off',volume:.3,customSound:''};
-let water=null,waterBase=null;let context=null,sources=[],soundElement=null, audioTimer=0, requestSerial=0;let pipeline=null, baseRender=A.R.render.bind(A.R), logged=false;
+const state={ao:false,aoStrength:1.05,aoRadius:2.2,ssr:false,ssrStrength:.27,water:false,waveHeight:.14,waveSpeed:1.0,waterSize:32,waterX:0,waterZ:0,waterY:.06,waterColor:'#438d9e',background:'',backgroundMode:'cover',audio:'off',volume:.3,customSound:''};
+let water=null,waterBase=null;let waterBounds=null;let context=null,sources=[],soundElement=null, audioTimer=0, requestSerial=0;let pipeline=null, baseRender=A.R.render.bind(A.R), logged=false;
 const supported=!!(window.SI_GRAPHICS_AVAILABLE&&T.WebGLRenderTarget&&T.DepthTexture&&T.ShaderMaterial);
 function msg(s){A.say('Environment · '+s)}
 function createPipeline(){
@@ -1402,13 +1402,37 @@ A.R.render=function(scene,camera){
  A.R.setRenderTarget(p.rt);baseRender(scene,camera);A.R.setRenderTarget(null);baseRender(p.fs,p.qc);
  }catch(e){A.R.setRenderTarget(null);if(!logged){logged=true;console.warn('Environment postprocess fallback:',e);msg('Effects paused due to graphics limitation')}state.ao=state.ssr=false;baseRender(scene,camera)}
 };
+function buildingBounds(){
+ const box=new T.Box3(),tmp=new T.Box3();let count=0;
+ A.S.updateMatrixWorld(true);
+ // Only architecture meshes: exclude staging aids, environmental water, sky, and non-building helpers.
+ const candidates=A.objs.filter(o=>o&&o.isMesh&&o!==water&&o.name!=='Environmental Water'&&o.userData?.id!=='si-water-environment'&&o.visible!==false&&o.geometry);
+ for(const o of candidates){
+  try{tmp.setFromObject(o);if(tmp.isEmpty())continue;const size=tmp.getSize(new T.Vector3());if(![size.x,size.y,size.z].every(Number.isFinite))continue;
+   if(Math.max(size.x,size.y,size.z)>100000)continue;
+   box.union(tmp);count++;
+  }catch(err){}
+ }
+ if(!count||box.isEmpty())return null;
+ return {min:box.min.clone(),max:box.max.clone(),center:box.getCenter(new T.Vector3()),size:box.getSize(new T.Vector3()),count};
+}
+function alignWater(mode='site'){
+ const b=buildingBounds();if(!b){msg('No building bounds available for alignment');return false;}
+ waterBounds=b;
+ state.waterX=Number(b.center.x.toFixed(3));state.waterZ=Number(b.center.z.toFixed(3));state.waterPositioned=true;
+ if(mode==='site')state.waterY=Number((b.min.y-.04).toFixed(3));
+ if(mode==='roof')state.waterY=Number((b.max.y+.08).toFixed(3));
+ if(mode==='fit')state.waterSize=Math.min(500,Math.max(2,Math.ceil(Math.max(b.size.x,b.size.z)*1.15)));
+ rebuildWater();if(!panel.hidden)renderUI();
+ msg('Water positioned in building world coordinates');return true;
+}
 function rebuildWater(){
  const restored=A.world.getObjectByProperty('name','Environmental Water');if(restored&&restored!==water){restored.parent?.remove(restored);const j=A.objs.indexOf(restored);if(j>=0)A.objs.splice(j,1);}
  if(water){A.world.remove(water);const i=A.objs.indexOf(water);if(i>=0)A.objs.splice(i,1);water.geometry.dispose();water.material.dispose();water=null;}
  if(!state.water)return;
  const g=new T.PlaneGeometry(state.waterSize,state.waterSize,56,56);g.rotateX(-Math.PI/2);waterBase=new Float32Array(g.attributes.position.array);
  const m=new T.MeshPhysicalMaterial({color:state.waterColor,roughness:.16,metalness:.15,transparent:true,opacity:.84,side:T.DoubleSide,depthWrite:false,clearcoat:1,clearcoatRoughness:.08});
- water=new T.Mesh(g,m);water.position.y=state.waterY;water.name='Environmental Water';water.userData={id:'si-water-environment',type:'water',cls:'environment',name:'Environmental Water',excludeNative:true};water.receiveShadow=true;A.world.add(water);A.objs.push(water);
+ water=new T.Mesh(g,m);water.position.set(Number(state.waterX)||0,Number(state.waterY)||0,Number(state.waterZ)||0);water.name='Environmental Water';water.userData={id:'si-water-environment',type:'water',cls:'environment',name:'Environmental Water',excludeNative:true};water.receiveShadow=true;A.world.add(water);A.objs.push(water);
 }
 let t0=performance.now();function waterTick(now){if(water){const a=water.geometry.attributes.position,tm=(now-t0)*.001*state.waveSpeed,amp=state.waveHeight;for(let i=0;i<a.count;i++){const x=waterBase[i*3],z=waterBase[i*3+2];a.setY(i,amp*(.63*Math.sin(x*.72+tm*1.7)*Math.cos(z*.56+tm*.85)+.26*Math.sin(x*1.7+z*1.1-tm*2.1)));}a.needsUpdate=true;water.geometry.computeVertexNormals();}
  requestAnimationFrame(waterTick)}requestAnimationFrame(waterTick);
@@ -1425,7 +1449,7 @@ function startAudio(){stopAudio();if(state.audio==='off')return;try{
  if(state.audio==='forest'){audioTimer=setInterval(()=>{if(!context||context.state!=='running')return;const osc=context.createOscillator(),gain=context.createGain(),now=context.currentTime;osc.type='sine';osc.frequency.setValueAtTime(rand(900,1900),now);osc.frequency.exponentialRampToValueAtTime(rand(1500,2700),now+.14);gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(.055,now+.03);gain.gain.exponentialRampToValueAtTime(.001,now+.23);osc.connect(gain);gain.connect(volume);osc.start(now);osc.stop(now+.25)},1000)}
  }catch(e){msg('Audio cannot start: '+e.message)}}
 function field(label,element){const wrap=document.createElement('label');wrap.className='si-fx-field';const tt=document.createElement('span');tt.textContent=label;wrap.append(tt,element);return wrap;}
-function range(k,label,min,max,step){const r=document.createElement('input');r.type='range';r.min=min;r.max=max;r.step=step;r.value=state[k];const val=document.createElement('output');val.textContent=state[k];r.addEventListener('input',()=>{state[k]=+r.value;val.textContent=r.value;if(k==='waveHeight'||k==='waveSpeed')return;if(k==='waterSize'||k==='waterY')rebuildWater()});const outer=document.createElement('div');outer.className='si-fx-control';outer.append(r,val);return field(label,outer)}
+function range(k,label,min,max,step){const r=document.createElement('input');r.type='range';r.min=min;r.max=max;r.step=step;r.value=state[k];const val=document.createElement('output');val.textContent=state[k];r.addEventListener('input',()=>{state[k]=+r.value;val.textContent=r.value;if(k==='waveHeight'||k==='waveSpeed')return;if(k==='waterSize')rebuildWater();else if(['waterX','waterY','waterZ'].includes(k)&&water)water.position.set(+state.waterX||0,+state.waterY||0,+state.waterZ||0)});const outer=document.createElement('div');outer.className='si-fx-control';outer.append(r,val);return field(label,outer)}
 function toggle(k,label,cb){const i=document.createElement('input');i.type='checkbox';i.checked=!!state[k];i.onchange=()=>{state[k]=i.checked;cb?.()};return field(label,i)}
 function section(name){const h=document.createElement('h4');h.className='si-fx-heading';h.textContent=name;return h}
 function fileInput(type,fn){const input=document.createElement('input');input.type='file';input.accept=type;input.addEventListener('change',async()=>{const f=input.files?.[0];if(!f)return;if(f.size>15e6){msg('Image/audio exceeds 15 MB embed limit');input.value='';return;}const reader=new FileReader();reader.onload=()=>fn(reader.result,f);reader.readAsDataURL(f)});return input}
@@ -1435,7 +1459,11 @@ function renderUI(){const pane=document.getElementById('siEnvironmentEffects');i
  const support=document.createElement('p');support.className='si-fx-note';support.textContent=supported?'Experimental screen-space shading • bounded at 1400px':'GPU unavailable • rendering effects disabled';pane.append(support);
  pane.append(toggle('ao','Screen-space AO (SSAO)'),range('aoStrength','AO intensity',0,3,.05),range('aoRadius','AO radius',.2,6,.1),toggle('ssr','Screen-space reflections (experimental)'),range('ssrStrength','Reflection intensity',0,.9,.05));
  pane.append(section('Animated water'));
- pane.append(toggle('water','Enable water surface',rebuildWater),range('waterSize','Water size (m)',2,100,1),range('waterY','Water elevation (m)',-5,30,.1),range('waveHeight','Wave amplitude',0,.8,.01),range('waveSpeed','Wave speed',0,3,.05));
+ pane.append(toggle('water','Enable water surface',()=>{if(state.water&&!state.waterPositioned){alignWater('site');state.waterPositioned=true}else rebuildWater()}),range('waterSize','Water size (m)',2,500,1),range('waterX','Water X (m)',-500,500,.1),range('waterY','Water elevation Y (m)',-100,200,.1),range('waterZ','Water Z (m)',-500,500,.1),range('waveHeight','Wave amplitude',0,.8,.01),range('waveSpeed','Wave speed',0,3,.05));
+ const waterActions=document.createElement('div');waterActions.className='si-fx-buttons';
+ [['Align to site','site'],['Fit water extent','fit'],['Place at roof','roof']].forEach(([label,mode])=>{const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.addEventListener('click',()=>alignWater(mode));waterActions.append(btn)});
+ pane.append(waterActions);
+ const info=document.createElement('p');info.className='si-fx-note';info.textContent='X and Z position the water horizontally; Y sets its elevation. Align to site places it at the building base. Water is non-destructive and excluded from model export.';pane.append(info);
  const color=document.createElement('input');color.type='color';color.value=state.waterColor;color.oninput=()=>{state.waterColor=color.value;if(water)water.material.color.set(state.waterColor)};pane.append(field('Water colour',color));
  pane.append(section('Sky & custom background'));
  const bi=fileInput('image/png,image/jpeg,image/webp',uri=>{state.background=uri;applyBackground();msg('Custom background applied')});pane.append(field('Import image background',bi));
@@ -1453,8 +1481,8 @@ trigger.addEventListener('click',()=>{const open=panel.hidden;panel.hidden=!open
 root.querySelectorAll('.tabs button:not(#siEffectsTab)').forEach(b=>b.addEventListener('click',()=>{panel.hidden=true;tab.hidden=false;trigger.classList.remove('on')}));
 const previousSer=A.ser.bind(A),previousDes=A.des.bind(A);
 A.ser=function(){const d=JSON.parse(previousSer());if(Array.isArray(d.objs))d.objs=d.objs.filter(o=>o.id!=='si-water-environment'&&o.n!=='Environmental Water');if(d.assets?.nodes)d.assets.nodes=d.assets.nodes.filter(o=>o.id!=='si-water-environment');d.environmentEffects={...state,background:state.background,customSound:state.customSound};return JSON.stringify(d)};
-A.des=function(input){const d=typeof input==='string'?JSON.parse(input):input;stopAudio();previousDes(JSON.stringify(d));Object.assign(state,d.environmentEffects||{water:false,background:'',audio:'off'});state.audio='off';rebuildWater();applyBackground();if(!panel.hidden)renderUI()};
-window.SI_ENVIRONMENT_EFFECTS={state,stopAudio,rebuildWater,applyBackground};
+A.des=function(input){const d=typeof input==='string'?JSON.parse(input):input;stopAudio();previousDes(JSON.stringify(d));Object.assign(state,d.environmentEffects||{water:false,background:'',audio:'off'});state.waterX=Number(state.waterX)||0;state.waterY=Number(state.waterY)||0;state.waterZ=Number(state.waterZ)||0;state.audio='off';rebuildWater();applyBackground();if(!panel.hidden)renderUI()};
+window.SI_ENVIRONMENT_EFFECTS={state,stopAudio,rebuildWater,applyBackground,alignWater,buildingBounds};
 })();
 
 </script><script id="si-pro-qa-engine">
