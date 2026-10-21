@@ -292,7 +292,18 @@ body.presentation #siCommandRibbon{display:none!important}
 html,body{height:100%;overflow:hidden!important}body{min-height:0!important;max-height:100dvh!important}#main{min-height:0!important;flex:1 1 auto!important}#vp{min-height:0!important}#cameraDirector,#cameraDock,#storyboardDock{max-width:100%}footer,#si-footer{position:relative!important;flex:0 0 auto;max-height:42px;overflow:hidden}
 </style>
 
-<style id="si-environment-effects-style">#siEffectsTab{min-width:58px!important}#siEnvironmentEffects{padding:12px 3px 20px;overflow-x:hidden}#siEnvironmentEffects[hidden]{display:none!important}.si-fx-pane h3{font-size:15px;margin:5px 0 9px}.si-fx-heading{font-size:11px;letter-spacing:.055em;margin:18px 0 8px;padding:8px 0 5px;border-bottom:1px solid var(--ln);color:var(--tx)}.si-fx-field{display:grid;grid-template-columns:minmax(0,1fr) minmax(84px,1.15fr);align-items:center;gap:9px;margin:9px 0;font-size:12px;color:var(--tx)}.si-fx-field>span{line-height:1.3}.si-fx-field input[type=file]{width:100%;font-size:11px}.si-fx-field input[type=checkbox]{width:17px;height:17px;accent-color:#254d60}.si-fx-control{min-width:0;display:flex;align-items:center;gap:5px}.si-fx-control input[type=range]{width:100%;min-width:0;accent-color:#254d60}.si-fx-control output{font-size:11px;min-width:27px;text-align:right;font-variant-numeric:tabular-nums}.si-fx-note{font-size:11px;line-height:1.45;color:var(--mu);margin:8px 0}.si-fx-buttons{display:flex;gap:6px;margin-top:10px}.si-fx-buttons button{flex:1;white-space:normal}#siEnvironmentEffects select{width:100%;min-width:0}</style></head><body>
+<style id="si-environment-effects-style">#siEffectsTab{min-width:58px!important}#siEnvironmentEffects{padding:12px 3px 20px;overflow-x:hidden}#siEnvironmentEffects[hidden]{display:none!important}.si-fx-pane h3{font-size:15px;margin:5px 0 9px}.si-fx-heading{font-size:11px;letter-spacing:.055em;margin:18px 0 8px;padding:8px 0 5px;border-bottom:1px solid var(--ln);color:var(--tx)}.si-fx-field{display:grid;grid-template-columns:minmax(0,1fr) minmax(84px,1.15fr);align-items:center;gap:9px;margin:9px 0;font-size:12px;color:var(--tx)}.si-fx-field>span{line-height:1.3}.si-fx-field input[type=file]{width:100%;font-size:11px}.si-fx-field input[type=checkbox]{width:17px;height:17px;accent-color:#254d60}.si-fx-control{min-width:0;display:flex;align-items:center;gap:5px}.si-fx-control input[type=range]{width:100%;min-width:0;accent-color:#254d60}.si-fx-control output{font-size:11px;min-width:27px;text-align:right;font-variant-numeric:tabular-nums}.si-fx-note{font-size:11px;line-height:1.45;color:var(--mu);margin:8px 0}.si-fx-buttons{display:flex;gap:6px;margin-top:10px}.si-fx-buttons button{flex:1;white-space:normal}#siEnvironmentEffects select{width:100%;min-width:0}</style><style id="si-pro-qa-style">
+:root{--si-pro-ink:#213d4a;--si-pro-line:#c9d5db}
+#siProQABtn{font-weight:700;background:#eff5f7;border:1px solid #9cb2bd;color:#173b4c;min-height:30px;padding:6px 12px;border-radius:5px;cursor:pointer}
+#siProQABtn:hover,#siProQABtn:focus-visible{background:#dceaf0;outline:2px solid #537c8d;outline-offset:1px}
+#siProQAPanel{position:fixed;right:14px;top:70px;width:min(480px,calc(100vw - 28px));max-height:min(80vh,730px);overflow:auto;padding:17px;box-shadow:0 18px 60px #102c3c44;border:1px solid #b6c9d2;border-radius:9px;background:#fff;color:#193743;z-index:90000;font:13px/1.5 system-ui,Arial,sans-serif}
+#siProQAPanel[hidden]{display:none!important}#siProQAPanel h3{margin:0 0 9px;font-size:17px}#siProQAPanel .siq-row{padding:7px 0;border-bottom:1px solid #e2e9ec;display:flex;gap:12px;align-items:start;justify-content:space-between}#siProQAPanel .siq-row b{font-weight:650}#siProQAPanel .siq-good{color:#176b51}#siProQAPanel .siq-bad{color:#b24a32}#siProQAPanel .siq-note{color:#56707c;font-size:12px}#siProQAPanel button{min-height:32px}
+body{overflow:hidden!important}#main,#vp,#side,#rail{min-height:0!important}#side,#rail{overflow-y:auto!important;overscroll-behavior:contain}#main{overflow:hidden!important}#vp{overflow:hidden!important}
+#bottomDock{max-width:100%!important;min-width:0!important;flex:0 0 auto}#bottomDock:not(.open) #siSequenceDirector{display:none!important}
+#siImportStrip,#siCommandRibbon{min-width:0}button,summary{touch-action:manipulation}button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid #1c6886;outline-offset:2px}button:disabled{cursor:not-allowed;opacity:.55}
+#siProQANotice{position:fixed;bottom:45px;right:14px;background:#193947;color:#fff;z-index:90001;border-radius:6px;padding:8px 12px;font-size:12px;max-width:360px;box-shadow:0 4px 18px #152e3b44}
+@media(max-width:700px){#siProQAPanel{right:6px;top:48px;width:calc(100vw - 12px);max-height:74vh}#siProQABtn{min-height:36px}#main{min-width:0!important}}
+</style></head><body>
 <header>
 <span class="logo"><span aria-hidden="true" class="brandMark">Si</span><span class="brandWords"><strong>Surreal Interactive</strong><small>VERTASCAN / VISUALIZATION STUDIO</small></span></span>
 <input id="title" style="width:130px;background:var(--wh);border:1px solid var(--ln);border-radius:3px;padding:2px 5px" type="text" value="Demo Pavilion"/>
@@ -376,7 +387,7 @@ function geoPack(g){const a={};for(const k of ['position','normal','uv'])if(g.at
 function geoUnpack(d){const g=new THREE.BufferGeometry();Object.entries(d.attributes||{}).forEach(([k,v])=>g.setAttribute(k,new THREE.Float32BufferAttribute(v.array,v.itemSize)));if(d.index)g.setIndex(d.index);if(!g.attributes.normal&&g.attributes.position)g.computeVertexNormals();return g;}
 function nodeData(m){return {id:m.userData.id,t:m.userData.type,n:m.userData.name,c:m.userData.cls,p:m.position.toArray(),r:[m.rotation.x,m.rotation.y,m.rotation.z],s:m.scale.toArray(),parent:m.parent&&m.parent.userData&&m.parent.userData.id||null,locked:!!m.userData.locked,level:m.userData.level||'Level 0',discipline:m.userData.discipline||'Architecture',m:{color:'#'+m.material.color.getHexString(),metalness:m.material.metalness,roughness:m.material.roughness,opacity:m.material.opacity,emissive:'#'+m.material.emissive.getHexString()},vis:m.visible,geo:m.userData.type==='custom'?geoPack(m.geometry):null};}
 const ser=()=>JSON.stringify({v:3,title:$('#title').value,atm,cams,story:window.SI_STORY||[],cameraPaths:window.SI_CAMERA_PATHS||[],shotSequence:window.SI_SHOT_SEQUENCE||[],groups:(()=>{const gs=[];world.traverse(x=>{if(x!==world&&x.isGroup)gs.push(x)});return gs})().map(x=>({id:x.userData.id,n:x.name,p:x.position.toArray(),r:x.rotation.toArray().slice(0,3),s:x.scale.toArray(),parent:x.parent&&x.parent.userData&&x.parent.userData.id||null,vis:x.visible})),objs:objs.map(nodeData)});
-function des(j){const d=JSON.parse(j);objs.splice(0).forEach(m=>{m.parent.remove(m);m.geometry.dispose();m.material.dispose()});while(world.children.length)world.remove(world.children[0]);sel=null;const nodes={};
+function des(j){const d=JSON.parse(j);objs.splice(0).forEach(m=>{m.parent?.remove(m); /* Keep shared imported resources alive until replacement completes. */ try{m.geometry?.dispose?.()}catch(_){}; try{(Array.isArray(m.material)?m.material:[m.material]).forEach(mat=>mat?.dispose?.())}catch(_){}});while(world.children.length)world.remove(world.children[0]);sel=null;const nodes={};
  (d.groups||[]).forEach(o=>{const g=new THREE.Group();g.name=o.n||'Group';g.userData={id:o.id||'g'+uid++};g.position.fromArray(o.p||[0,0,0]);g.rotation.set(...(o.r||[0,0,0]));g.scale.fromArray(o.s||[1,1,1]);g.visible=o.vis!==false;world.add(g);nodes[g.userData.id]=g});
  (d.objs||[]).forEach(o=>{const m=o.geo?new THREE.Mesh(geoUnpack(o.geo),new THREE.MeshPhysicalMaterial()):mk(GEO[o.t]?o.t:'box',o.n,o.p||[0,0,0],o.s||[1,1,1],null,o.r||[0,0,0]);if(o.geo){world.add(m);objs.push(m);m.position.fromArray(o.p||[0,0,0]);m.rotation.set(...(o.r||[0,0,0]));m.scale.fromArray(o.s||[1,1,1])}m.userData={id:o.id||'o'+uid++,type:o.geo?'custom':o.t,name:o.n||'Object',cls:o.c||'mass',locked:!!o.locked,level:o.level||'Level 0',discipline:o.discipline||'Architecture'};m.castShadow=m.receiveShadow=true;setMat(m,o.m||PRE.Concrete);m.visible=o.vis!==false;nodes[m.userData.id]=m});
  (d.groups||[]).forEach(o=>{const g=nodes[o.id],par=nodes[o.parent];if(g&&par&&par!==g&&!isChildOf(par,g))par.add(g)});
@@ -1446,5 +1457,90 @@ A.des=function(input){const d=typeof input==='string'?JSON.parse(input):input;st
 window.SI_ENVIRONMENT_EFFECTS={state,stopAudio,rebuildWater,applyBackground};
 })();
 
-</script></body></html>
+</script><script id="si-pro-qa-engine">
+(()=>{'use strict';
+const log=[];const maxLog=100;const entry=(severity,message)=>{log.push({when:new Date().toLocaleTimeString(),severity,message:String(message).slice(0,450)});if(log.length>maxLog)log.shift()};
+window.addEventListener('error',e=>entry('Error',e.message||'Unknown script failure'));
+window.addEventListener('unhandledrejection',e=>entry('Promise',e.reason?.message||String(e.reason)));
+const a=document.createElement('button');a.id='siProQABtn';a.type='button';a.textContent='QA / Diagnostics';a.title='Check editor, imported model and presentation services';
+const ribbon=document.getElementById('siCommandRibbon')||document.querySelector('header');ribbon.append(a);
+const pane=document.createElement('aside');pane.id='siProQAPanel';pane.hidden=true;pane.setAttribute('role','dialog');pane.setAttribute('aria-label','Studio QA diagnostics');pane.innerHTML='<header style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0;margin:0 0 10px;border:0;background:none"><h3>Surreal Interactive · Studio Diagnostics</h3><button type="button" id="siqClose">✕ Close</button></header><div id="siqContent"></div><p class="siq-note">Automated checks inspect availability and state; they do not certify visual fidelity or geometry integrity.</p><button type="button" id="siqCopy">Copy diagnostic report</button> <button type="button" id="siqRefresh">Run checks</button>';
+document.body.append(pane);
+const content=pane.querySelector('#siqContent');let report='';
+function check(){const A=window.SI;const renderer=A?.R;const geometry=A?.world;const panels=['rail','side','vp','bottomDock'];let obj=A?.objs?.length??0;
+ const tests=[
+ ['Editor initialized',!!A,'Core editor state'],
+ ['3D graphics active',!!window.SI_GRAPHICS_AVAILABLE,'WebGL and GPU context'],
+ ['Renderable scene',!!geometry&&!!A?.cam,'3D camera and scene'],
+ ['Commercial demo present',obj>100,'Objects detected: '+obj],
+ ['Model hierarchy',!!document.getElementById('modelDock'),'Selectable scene tree'],
+ ['Viewport tools',!!window.SI_VIEWPORT_GIZMO,'Move / Rotate / Scale controls'],
+ ['Camera paths',!!window.SI_PATH_DIRECTOR,'Route editor'],
+ ['Shot sequencer',!!document.getElementById('siSequenceDirector'),'Multi-shot timeline'],
+ ['Section cutter',!!document.getElementById('siSectionDock'),'XYZ clipping controls'],
+ ['Material studio',!!window.SI_PROCEDURAL_MATERIALS,'Procedural textures'],
+ ['Environmental controls',!!window.SI_ENVIRONMENT_EFFECTS,'AO, SSR, sound, background'],
+ ['Native project actions',!!window.SI_PROJECT_FILES,'New, Open, Save and Save As'],
+ ['3D asset importer',typeof window.SI_IMPORT_FILE==='function','GLB / OBJ / STL / FBX import'],
+ ['UI panels in DOM',panels.every(id=>!!document.getElementById(id)),'Main screen workspaces'],
+ ['Horizontal page overflow',document.documentElement.scrollWidth<=window.innerWidth+2,document.documentElement.scrollWidth+'px / '+window.innerWidth+'px'],
+ ['Unhandled runtime errors',!log.some(x=>x.severity!=='Note'),'Events logged: '+log.length],
+ ];
+ content.replaceChildren();for(const [name,ok,detail] of tests){const row=document.createElement('div');row.className='siq-row';const l=document.createElement('div'),r=document.createElement('b');l.textContent=name;const sub=document.createElement('div');sub.className='siq-note';sub.textContent=detail;l.append(sub);r.textContent=ok?'Available':'Review';r.className=ok?'siq-good':'siq-bad';row.append(l,r);content.append(row)}
+ if(log.length){const h=document.createElement('h4');h.textContent='Recent runtime events';content.append(h);log.slice(-8).forEach(x=>{const d=document.createElement('p');d.className='siq-note';d.textContent=x.when+' · '+x.severity+' · '+x.message;content.append(d)})}
+ report=['SURREAL INTERACTIVE | VERTASCAN · PRO DIAGNOSTICS',new Date().toISOString(),...tests.map(x=>(x[1]?'PASS':'REVIEW')+' | '+x[0]+' | '+x[2]),...log.map(x=>x.when+' '+x.severity+' '+x.message)].join('\n');return tests}
+a.onclick=()=>{pane.hidden=!pane.hidden;if(!pane.hidden)check()};pane.querySelector('#siqClose').onclick=()=>pane.hidden=true;pane.querySelector('#siqRefresh').onclick=check;pane.querySelector('#siqCopy').onclick=()=>{check();navigator.clipboard?.writeText(report).then(()=>window.SI?.say?.('QA diagnostics copied')).catch(()=>window.prompt('Copy diagnostics:',report))??window.prompt('Copy diagnostics:',report)};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!pane.hidden){pane.hidden=true;e.stopPropagation()}});
+// Keep the viewport usable after dock and inspector resizing.
+if(window.ResizeObserver){const vp=document.getElementById('vp');if(vp){let pending=false;new ResizeObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;try{window.SI?.resize?.()}catch(e){entry('Resize',e.message)}})}).observe(vp)}}
+// Prevent saved file operations from being accidentally triggered twice in one click.
+document.querySelectorAll('button').forEach(b=>{if(!b.type)b.type='button';if(!b.title&&b.textContent?.trim())b.title=b.textContent.trim()});
+window.SI_PRO_QA={check,log,report:()=>{check();return report}};
+})();
+</script>
+<style id="si-commercial-release-style">
+#siReleasePanel{position:fixed;inset:65px 16px 16px auto;width:min(590px,calc(100vw - 32px));z-index:95000;background:#fff;color:#1a3440;border:1px solid #bfd0d7;box-shadow:0 18px 60px #17344242;border-radius:10px;display:flex;flex-direction:column;font:13px/1.5 system-ui,Arial,sans-serif;overflow:hidden}
+#siReleasePanel[hidden]{display:none!important}#siReleasePanel header{padding:13px 16px;background:#eff5f6;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-shrink:0}#siReleasePanel h2{font-size:16px;margin:0}#siReleasePanel .siReleaseBody{padding:14px 16px;overflow:auto}#siReleasePanel p{margin:6px 0 12px}#siReleasePanel .srRow{border-bottom:1px solid #e1eaec;display:grid;grid-template-columns:minmax(0,1fr) 135px;align-items:center;gap:10px;padding:9px 0}#siReleasePanel label{font-weight:600;display:block}#siReleasePanel small{display:block;font-size:11px;color:#596d75}#siReleasePanel button,#siReleasePanel select{min-height:31px;background:white;color:#193743;border:1px solid #a9c0ca;border-radius:4px;padding:5px 8px;font-size:12px}#siReleasePanel select{width:100%;min-width:0}#siReleasePanel button:hover{background:#e5eff2}#siReleasePanel .srActions{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}#siReleasePanel .srActions button{font-weight:600}#siReleasePanel .srState{font-weight:700;padding:10px 12px;background:#edf2f4;border-radius:5px;margin-bottom:10px}#siReleasePanel .srWarning{background:#fff4e8}#siReleasePanel textarea{width:100%;min-height:70px;resize:vertical;border:1px solid #bacbd0;border-radius:5px;padding:8px;font:12px/1.4 system-ui}
+@media(max-width:650px){#siReleasePanel{inset:8px;width:auto;max-height:calc(100dvh - 16px)}#siReleasePanel .srRow{grid-template-columns:minmax(0,1fr) 110px}}
+</style>
+<script id="si-commercial-release-validation">
+(()=>{'use strict';
+const cases=[
+['glb','GLB standard scene','Import representative GLB, confirm hierarchy, UVs, texture slots and scene scale'],
+['glbAdvanced','GLB advanced scene','Import Draco/Meshopt and PBR extensions; check fallback/error and textured appearance'],
+['fbx','FBX rig and animation','Import FBX with skin, joints, keyframes and textures; playback and hierarchy must be correct'],
+['obj','OBJ geometry and materials','Import multi-object OBJ with MTL/textures; verify orientation, units and material fidelity'],
+['stl','STL geometry','Import binary and ASCII STL; verify dimensions, normals and editable transforms'],
+['materials','Complex material rendering','Compare glazing, transmission, metallic roughness, normals and UV scale against references'],
+['transforms','Viewport and gizmo editing','Test select, move, rotate, scale, hierarchy and undo/redo without lost geometry'],
+['camera','Camera and section animation','Play all camera routes, sequencer shots, XYZ clipping and animated model components'],
+['save','Native project round trip','Save .surreal, close/reopen and compare hierarchy, textures, animations and settings'],
+['publish','Standalone client proposal','Export HTML, reopen offline, verify view gallery, model controls, animations and assets'],
+['record','Video recording','Record complete multi-shot sequence, verify video duration and playable WebM'],
+['stress','Representative performance','Load large textured model and inspect FPS, GPU memory and repeated edits on target hardware'],
+['compat','Deployment compatibility','Run latest Chrome and Edge on discrete and integrated GPU configurations']
+];
+const notes='Commercial acceptance requires a graphics-enabled browser and representative real files. Source syntax and element presence are not proof of import, material, animation or output fidelity.';
+const key='si-release-matrix-v1';let state={};try{state=JSON.parse(localStorage.getItem(key)||'{}')}catch(_){}
+const save=()=>{try{localStorage.setItem(key,JSON.stringify(state))}catch(_){}};
+function el(tag,props={},txt=''){const n=document.createElement(tag);Object.entries(props).forEach(([k,v])=>{if(k==='className')n.className=v;else n.setAttribute(k,v)});if(txt)n.textContent=txt;return n}
+const trigger=el('button',{type:'button',id:'siReleaseOpen'},'Release validation');trigger.title='Commercial release acceptance checklist';
+(document.getElementById('siCommandRibbon')||document.querySelector('header')||document.body).append(trigger);
+const panel=el('section',{id:'siReleasePanel',role:'dialog','aria-label':'Commercial release validation',hidden:''});const head=el('header');head.append(el('h2',{},'Surreal Interactive | Commercial Release Gate'));const close=el('button',{type:'button'},'Close');close.onclick=()=>panel.hidden=true;head.append(close);panel.append(head);
+const body=el('div',{className:'siReleaseBody'});panel.append(body);document.body.append(panel);
+const stateBox=el('div',{className:'srState'});body.append(stateBox);body.append(el('p',{},notes));
+const capTitle=el('h3',{},'Graphics capabilities');body.append(capTitle);const caps=el('div');body.append(caps);
+const matrixTitle=el('h3',{},'Acceptance matrix');body.append(matrixTitle);const matrix=el('div');body.append(matrix);
+const notesLabel=el('label',{},'Test environment and evidence');const notesArea=el('textarea',{placeholder:'Browser, GPU, test model filenames, observed issues, exported file checks...'});notesArea.value=state.notes||'';notesArea.addEventListener('input',()=>{state.notes=notesArea.value;save()});body.append(notesLabel,notesArea);
+const actions=el('div',{className:'srActions'});body.append(actions);
+const run=el('button',{type:'button'},'Run graphics checks');const copy=el('button',{type:'button'},'Copy report');const download=el('button',{type:'button'},'Download report');const clear=el('button',{type:'button'},'Reset statuses');actions.append(run,copy,download,clear);
+let auto={};function assess(){const c=document.createElement('canvas');let gl=null,vers='Unavailable',vendor='Unavailable';try{gl=c.getContext('webgl2')||c.getContext('webgl');if(gl){vers=gl.getParameter(gl.VERSION);vendor=gl.getParameter(gl.VENDOR)}}catch(e){vers='Error: '+e.message}auto={webgl:!!gl,version:vers,vendor,mediaRecorder:typeof MediaRecorder!=='undefined',canvasCapture:typeof HTMLCanvasElement!=='undefined'&&'captureStream'in HTMLCanvasElement.prototype,webm:typeof MediaRecorder!=='undefined'&&typeof MediaRecorder.isTypeSupported==='function'&&['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].some(v=>MediaRecorder.isTypeSupported(v)),date:new Date().toISOString(),userAgent:navigator.userAgent};caps.replaceChildren();for(const [a,b] of [['GPU graphics context',auto.webgl?'Available':'Unavailable'],['Graphics version',auto.version],['MediaRecorder',auto.mediaRecorder?'Available':'Unavailable'],['Canvas recording',auto.canvasCapture?'Available':'Unavailable'],['WebM recording MIME',auto.webm?'Supported':'Unavailable']]){const r=el('div',{className:'srRow'});r.append(el('span',{},a),el('strong',{},b));caps.append(r)}if(gl)gl.getExtension('WEBGL_lose_context')?.loseContext();renderState()}
+function renderState(){const passed=cases.filter(([id])=>state[id]==='pass').length;const failed=cases.filter(([id])=>state[id]==='fail').length;const all=passed===cases.length;stateBox.textContent=all&&auto.webgl&&auto.webm?'Acceptance matrix complete — review evidence and authorize deployment':`${passed}/${cases.length} verified passed · ${failed} failed · ${cases.length-passed-failed} pending or not tested`;stateBox.classList.toggle('srWarning',!all||!auto.webgl||!auto.webm)}
+for(const [id,title,detail] of cases){const row=el('div',{className:'srRow'});const desc=el('div');desc.append(el('label',{},title),el('small',{},detail));const sel=el('select',{'aria-label':title+' test result'});for(const [v,t] of [['untested','Not tested'],['pass','Verified pass'],['fail','Failed'],['blocked','Blocked']]){const opt=el('option',{value:v},t);sel.append(opt)}sel.value=state[id]||'untested';sel.addEventListener('change',()=>{state[id]=sel.value;save();renderState()});row.append(desc,sel);matrix.append(row)}
+function report(){return ['SURREAL INTERACTIVE | VERTASCAN — COMMERCIAL RELEASE ACCEPTANCE','Generated: '+new Date().toISOString(),notes,'','BROWSER CHECKS',...Object.entries(auto).map(([k,v])=>k+': '+v),'','REPRESENTATIVE MODEL VALIDATION',...cases.map(([id,title,detail])=>`${(state[id]||'untested').toUpperCase()} | ${title} | ${detail}`),'','TEST EVIDENCE',state.notes||'(No evidence recorded)','','Release status: '+(cases.every(([id])=>state[id]==='pass')&&auto.webgl&&auto.webm?'All recorded checks passed; human review required':'NOT CLEARED — unresolved, blocked or untested checks remain')].join('\n')}
+run.onclick=assess;copy.onclick=()=>{const s=report();if(navigator.clipboard?.writeText)navigator.clipboard.writeText(s).catch(()=>prompt('Copy report:',s));else prompt('Copy report:',s)};download.onclick=()=>{const url=URL.createObjectURL(new Blob([report()],{type:'text/plain'}));const a=el('a',{href:url,download:'Surreal_Interactive_Commercial_Acceptance_Report.txt'});a.click();setTimeout(()=>URL.revokeObjectURL(url),3000)};clear.onclick=()=>{if(!confirm('Reset all acceptance statuses?'))return;state={notes:notesArea.value};save();matrix.querySelectorAll('select').forEach(x=>x.value='untested');renderState()};trigger.onclick=()=>{panel.hidden=!panel.hidden;if(!panel.hidden)assess()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)panel.hidden=true});
+window.SI_RELEASE_GATE={assess,report,cases};assess();
+})();
+</script>
+</body></html>
 
