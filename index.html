@@ -1148,7 +1148,7 @@ function siUnpackCompact(plain){
     node.materials=item;
   }
  }
- return packed.project;
+ return packed.project.scene || packed.project;
 }
 let demoSerialized=null,busy=false;
 async function restore(){
@@ -1156,7 +1156,9 @@ async function restore(){
  try{
   if(!demoSerialized)demoSerialized=await unpack();
   const data=siUnpackCompact(demoSerialized);
+  if(!Array.isArray(data.objs))throw Error('Embedded demo missing scene objects');
   A.des(JSON.stringify(data));
+  if(!A.objs?.length)throw Error('Commercial scene deserialized but no building meshes were restored');
   // The additional asset layer receives the same restored scene data.
   A.refreshAll?.();frameScene();resetCuts();
   status.textContent='Loaded '+A.objs.length+' architectural meshes · Commercial Building Concept';
