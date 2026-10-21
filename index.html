@@ -292,7 +292,7 @@ body.presentation #siCommandRibbon{display:none!important}
 html,body{height:100%;overflow:hidden!important}body{min-height:0!important;max-height:100dvh!important}#main{min-height:0!important;flex:1 1 auto!important}#vp{min-height:0!important}#cameraDirector,#cameraDock,#storyboardDock{max-width:100%}footer,#si-footer{position:relative!important;flex:0 0 auto;max-height:42px;overflow:hidden}
 </style>
 
-</head><body>
+<style id="si-environment-effects-style">#siEffectsTab{min-width:58px!important}#siEnvironmentEffects{padding:12px 3px 20px;overflow-x:hidden}#siEnvironmentEffects[hidden]{display:none!important}.si-fx-pane h3{font-size:15px;margin:5px 0 9px}.si-fx-heading{font-size:11px;letter-spacing:.055em;margin:18px 0 8px;padding:8px 0 5px;border-bottom:1px solid var(--ln);color:var(--tx)}.si-fx-field{display:grid;grid-template-columns:minmax(0,1fr) minmax(84px,1.15fr);align-items:center;gap:9px;margin:9px 0;font-size:12px;color:var(--tx)}.si-fx-field>span{line-height:1.3}.si-fx-field input[type=file]{width:100%;font-size:11px}.si-fx-field input[type=checkbox]{width:17px;height:17px;accent-color:#254d60}.si-fx-control{min-width:0;display:flex;align-items:center;gap:5px}.si-fx-control input[type=range]{width:100%;min-width:0;accent-color:#254d60}.si-fx-control output{font-size:11px;min-width:27px;text-align:right;font-variant-numeric:tabular-nums}.si-fx-note{font-size:11px;line-height:1.45;color:var(--mu);margin:8px 0}.si-fx-buttons{display:flex;gap:6px;margin-top:10px}.si-fx-buttons button{flex:1;white-space:normal}#siEnvironmentEffects select{width:100%;min-width:0}</style></head><body>
 <header>
 <span class="logo"><span aria-hidden="true" class="brandMark">Si</span><span class="brandWords"><strong>Surreal Interactive</strong><small>VERTASCAN / VISUALIZATION STUDIO</small></span></span>
 <input id="title" style="width:130px;background:var(--wh);border:1px solid var(--ln);border-radius:3px;padding:2px 5px" type="text" value="Demo Pavilion"/>
@@ -1346,5 +1346,105 @@ window.addEventListener('si-deserialized',()=>{stopSequence();shots=Array.isArra
 refresh();
 })();
 </script>
-</body></html>
+<script id="si-effects-water-audio">
+(()=>{'use strict';
+const A=window.SI,T=A?.THREE;if(!A||!T)return;
+const root=document.getElementById('side'),tab=document.getElementById('tab');
+const state={ao:false,aoStrength:1.05,aoRadius:2.2,ssr:false,ssrStrength:.27,water:false,waveHeight:.14,waveSpeed:1.0,waterSize:32,waterY:.06,waterColor:'#438d9e',background:'',backgroundMode:'cover',audio:'off',volume:.3,customSound:''};
+let water=null,waterBase=null;let context=null,sources=[],soundElement=null, audioTimer=0, requestSerial=0;let pipeline=null, baseRender=A.R.render.bind(A.R), logged=false;
+const supported=!!(window.SI_GRAPHICS_AVAILABLE&&T.WebGLRenderTarget&&T.DepthTexture&&T.ShaderMaterial);
+function msg(s){A.say('Environment · '+s)}
+function createPipeline(){
+ if(!supported||pipeline)return pipeline;
+ try{
+ const gl=A.R.getContext();if(!gl.getExtension('WEBGL_depth_texture')&&!(gl instanceof WebGL2RenderingContext))throw Error('Depth textures unavailable');
+ const w=256,h=256;
+ const rt=new T.WebGLRenderTarget(w,h,{minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,depthBuffer:true});
+ rt.depthTexture=new T.DepthTexture(w,h);rt.depthTexture.type=T.UnsignedShortType;
+ const mat=new T.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{tColor:{value:rt.texture},tDepth:{value:rt.depthTexture},resolution:{value:new T.Vector2(w,h)},projectionInverse:{value:new T.Matrix4()},projection:{value:new T.Matrix4()},aoEnabled:{value:1},aoStrength:{value:1},aoRadius:{value:2},ssrEnabled:{value:0},ssrStrength:{value:.2}},vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',fragmentShader:`precision highp float;
+varying vec2 vUv; uniform sampler2D tColor,tDepth;uniform vec2 resolution;uniform mat4 projectionInverse,projection; uniform float aoEnabled,aoStrength,aoRadius,ssrEnabled,ssrStrength;
+vec3 viewPos(vec2 uv,float depth){vec4 p=projectionInverse*vec4(uv*2.-1.,depth*2.-1.,1.);return p.xyz/max(.0001,p.w);}
+float rand(vec2 x){return fract(sin(dot(x,vec2(12.9898,78.233)))*43758.5453);}
+void main(){vec3 col=texture2D(tColor,vUv).rgb; float d=texture2D(tDepth,vUv).x; if(d>.9999){gl_FragColor=vec4(col,1.);return;} vec3 p=viewPos(vUv,d);
+vec2 pixel=1./resolution;float zX=texture2D(tDepth,vUv+vec2(pixel.x*2.,0.)).x;float zY=texture2D(tDepth,vUv+vec2(0.,pixel.y*2.)).x;
+vec3 dx=viewPos(vUv+vec2(pixel.x*2.,0.),zX)-p;vec3 dy=viewPos(vUv+vec2(0.,pixel.y*2.),zY)-p; vec3 n=normalize(cross(dx,dy)); if(n.z<0.)n=-n;
+if(aoEnabled>.5){float occ=0.;float sampleCount=0.;for(int i=0;i<12;i++){float a=float(i)*2.39996;float rr=(.3+float(i)/12.)*aoRadius*max(.002, -1./p.z);vec2 suv=vUv+vec2(cos(a),sin(a))*rr; if(suv.x<.0||suv.x>1.||suv.y<.0||suv.y>1.)continue;float sd=texture2D(tDepth,suv).x;if(sd>.9999)continue;vec3 q=viewPos(suv,sd);vec3 dir=q-p;float dist=length(dir);float range=1.-smoothstep(0.,max(.05,aoRadius*3.),dist);occ+=max(0.,dot(n,normalize(dir))-.08)*range;sampleCount+=1.;}col*=1.-clamp(occ/max(1.,sampleCount)*aoStrength*2.2,0.,.72);}
+if(ssrEnabled>.5){vec3 V=normalize(p);vec3 dir=reflect(V,n);vec3 hit=vec3(0.);float found=0.;vec3 rp=p;for(int i=0;i<18;i++){rp+=dir*(.12+float(i)*.07);vec4 clip=projection*vec4(rp,1.);vec2 u=clip.xy/clip.w*.5+.5;if(u.x<.01||u.x>.99||u.y<.01||u.y>.99)break;float sd=texture2D(tDepth,u).x;if(sd>.9999)continue;vec3 q=viewPos(u,sd);if(rp.z<=q.z&&rp.z>q.z-.75){hit=texture2D(tColor,u).rgb;found=1.;break;}}float fres=pow(1.-clamp(dot(-V,n),0.,1.),3.);col=mix(col,hit,found*ssrStrength*(.15+.85*fres));}
+gl_FragColor=vec4(col,1.);}`});
+ const fs=new T.Scene(),qc=new T.OrthographicCamera(-1,1,1,-1,0,1);fs.add(new T.Mesh(new T.PlaneGeometry(2,2),mat));
+ pipeline={rt,mat,fs,qc,w:0,h:0};return pipeline;
+ }catch(e){console.warn('Environment effect setup:',e);msg('AO / SSR unavailable on this graphics device');return null;}
+}
+A.R.render=function(scene,camera){
+ if(scene!==A.S||camera!==A.cam||(!state.ao&&!state.ssr)||!supported)return baseRender(scene,camera);
+ const p=createPipeline();if(!p)return baseRender(scene,camera);
+ const target=A.R.getRenderTarget?.()||null;if(target)return baseRender(scene,camera);
+ const canvas=A.R.domElement,w=canvas.width,h=canvas.height;
+ if(w<2||h<2)return baseRender(scene,camera);
+ // Render at bounded screen resolution; scaling down avoids crippling complex BIM scenes.
+ const scale=Math.min(1,1400/Math.max(w,h));const pw=Math.max(2,Math.floor(w*scale)),ph=Math.max(2,Math.floor(h*scale));
+ try{
+ if(p.w!==pw||p.h!==ph){p.rt.setSize(pw,ph);p.w=pw;p.h=ph;p.mat.uniforms.resolution.value.set(pw,ph)}
+ p.mat.uniforms.projectionInverse.value.copy(camera.projectionMatrix).invert();p.mat.uniforms.projection.value.copy(camera.projectionMatrix);
+ p.mat.uniforms.aoEnabled.value=state.ao?1:0;p.mat.uniforms.aoStrength.value=state.aoStrength;p.mat.uniforms.aoRadius.value=state.aoRadius;
+ p.mat.uniforms.ssrEnabled.value=state.ssr?1:0;p.mat.uniforms.ssrStrength.value=state.ssrStrength;
+ A.R.setRenderTarget(p.rt);baseRender(scene,camera);A.R.setRenderTarget(null);baseRender(p.fs,p.qc);
+ }catch(e){A.R.setRenderTarget(null);if(!logged){logged=true;console.warn('Environment postprocess fallback:',e);msg('Effects paused due to graphics limitation')}state.ao=state.ssr=false;baseRender(scene,camera)}
+};
+function rebuildWater(){
+ const restored=A.world.getObjectByProperty('name','Environmental Water');if(restored&&restored!==water){restored.parent?.remove(restored);const j=A.objs.indexOf(restored);if(j>=0)A.objs.splice(j,1);}
+ if(water){A.world.remove(water);const i=A.objs.indexOf(water);if(i>=0)A.objs.splice(i,1);water.geometry.dispose();water.material.dispose();water=null;}
+ if(!state.water)return;
+ const g=new T.PlaneGeometry(state.waterSize,state.waterSize,56,56);g.rotateX(-Math.PI/2);waterBase=new Float32Array(g.attributes.position.array);
+ const m=new T.MeshPhysicalMaterial({color:state.waterColor,roughness:.16,metalness:.15,transparent:true,opacity:.84,side:T.DoubleSide,depthWrite:false,clearcoat:1,clearcoatRoughness:.08});
+ water=new T.Mesh(g,m);water.position.y=state.waterY;water.name='Environmental Water';water.userData={id:'si-water-environment',type:'water',cls:'environment',name:'Environmental Water',excludeNative:true};water.receiveShadow=true;A.world.add(water);A.objs.push(water);
+}
+let t0=performance.now();function waterTick(now){if(water){const a=water.geometry.attributes.position,tm=(now-t0)*.001*state.waveSpeed,amp=state.waveHeight;for(let i=0;i<a.count;i++){const x=waterBase[i*3],z=waterBase[i*3+2];a.setY(i,amp*(.63*Math.sin(x*.72+tm*1.7)*Math.cos(z*.56+tm*.85)+.26*Math.sin(x*1.7+z*1.1-tm*2.1)));}a.needsUpdate=true;water.geometry.computeVertexNormals();}
+ requestAnimationFrame(waterTick)}requestAnimationFrame(waterTick);
+function applyBackground(){if(!state.background){A.S.background=new T.Color(A.atm.bg);return;}const id=++requestSerial;new T.TextureLoader().load(state.background,texture=>{if(id!==requestSerial)return;texture.encoding=T.sRGBEncoding;A.S.background=texture;},undefined,()=>msg('Background could not be loaded'));}
+const rand=(a,b)=>a+Math.random()*(b-a);
+function stopAudio(){sources.forEach(x=>{try{x.stop?.()}catch(e){}try{x.disconnect?.()}catch(e){}});sources=[];clearInterval(audioTimer);audioTimer=0;if(soundElement){soundElement.pause();soundElement.src='';soundElement=null;}}
+function startAudio(){stopAudio();if(state.audio==='off')return;try{
+ if(!context)context=new (window.AudioContext||window.webkitAudioContext)();context.resume();
+ const volume=context.createGain();volume.gain.value=state.volume*.38;volume.connect(context.destination);sources.push(volume);
+ if(state.audio==='custom'){if(state.customSound){soundElement=new Audio(state.customSound);soundElement.loop=true;const src=context.createMediaElementSource(soundElement);src.connect(volume);sources.push(src);soundElement.play().catch(()=>msg('Press Play ambience to enable audio'))}return;}
+ const buffer=context.createBuffer(1,context.sampleRate*2,context.sampleRate);const arr=buffer.getChannelData(0);for(let i=0;i<arr.length;i++)arr[i]=Math.random()*2-1;
+ const noise=context.createBufferSource();noise.buffer=buffer;noise.loop=true;const filter=context.createBiquadFilter();filter.type=state.audio==='rain'?'highpass':'lowpass';filter.frequency.value=state.audio==='rain'?780:state.audio==='wind'?260:state.audio==='ocean'?570:1100;
+ noise.connect(filter);filter.connect(volume);noise.start();sources.push(noise,filter);
+ if(state.audio==='forest'){audioTimer=setInterval(()=>{if(!context||context.state!=='running')return;const osc=context.createOscillator(),gain=context.createGain(),now=context.currentTime;osc.type='sine';osc.frequency.setValueAtTime(rand(900,1900),now);osc.frequency.exponentialRampToValueAtTime(rand(1500,2700),now+.14);gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(.055,now+.03);gain.gain.exponentialRampToValueAtTime(.001,now+.23);osc.connect(gain);gain.connect(volume);osc.start(now);osc.stop(now+.25)},1000)}
+ }catch(e){msg('Audio cannot start: '+e.message)}}
+function field(label,element){const wrap=document.createElement('label');wrap.className='si-fx-field';const tt=document.createElement('span');tt.textContent=label;wrap.append(tt,element);return wrap;}
+function range(k,label,min,max,step){const r=document.createElement('input');r.type='range';r.min=min;r.max=max;r.step=step;r.value=state[k];const val=document.createElement('output');val.textContent=state[k];r.addEventListener('input',()=>{state[k]=+r.value;val.textContent=r.value;if(k==='waveHeight'||k==='waveSpeed')return;if(k==='waterSize'||k==='waterY')rebuildWater()});const outer=document.createElement('div');outer.className='si-fx-control';outer.append(r,val);return field(label,outer)}
+function toggle(k,label,cb){const i=document.createElement('input');i.type='checkbox';i.checked=!!state[k];i.onchange=()=>{state[k]=i.checked;cb?.()};return field(label,i)}
+function section(name){const h=document.createElement('h4');h.className='si-fx-heading';h.textContent=name;return h}
+function fileInput(type,fn){const input=document.createElement('input');input.type='file';input.accept=type;input.addEventListener('change',async()=>{const f=input.files?.[0];if(!f)return;if(f.size>15e6){msg('Image/audio exceeds 15 MB embed limit');input.value='';return;}const reader=new FileReader();reader.onload=()=>fn(reader.result,f);reader.readAsDataURL(f)});return input}
+function renderUI(){const pane=document.getElementById('siEnvironmentEffects');if(!pane)return;pane.innerHTML='';const title=document.createElement('h3');title.textContent='Environment & Effects';pane.append(title);
+ const note=document.createElement('p');note.className='si-fx-note';note.textContent='Effects operate on the current WebGL scene. Choose performance-conscious settings for large commercial models.';pane.append(note);
+ pane.append(section('Surface light & reflections'));
+ const support=document.createElement('p');support.className='si-fx-note';support.textContent=supported?'Experimental screen-space shading • bounded at 1400px':'GPU unavailable • rendering effects disabled';pane.append(support);
+ pane.append(toggle('ao','Screen-space AO (SSAO)'),range('aoStrength','AO intensity',0,3,.05),range('aoRadius','AO radius',.2,6,.1),toggle('ssr','Screen-space reflections (experimental)'),range('ssrStrength','Reflection intensity',0,.9,.05));
+ pane.append(section('Animated water'));
+ pane.append(toggle('water','Enable water surface',rebuildWater),range('waterSize','Water size (m)',2,100,1),range('waterY','Water elevation (m)',-5,30,.1),range('waveHeight','Wave amplitude',0,.8,.01),range('waveSpeed','Wave speed',0,3,.05));
+ const color=document.createElement('input');color.type='color';color.value=state.waterColor;color.oninput=()=>{state.waterColor=color.value;if(water)water.material.color.set(state.waterColor)};pane.append(field('Water colour',color));
+ pane.append(section('Sky & custom background'));
+ const bi=fileInput('image/png,image/jpeg,image/webp',uri=>{state.background=uri;applyBackground();msg('Custom background applied')});pane.append(field('Import image background',bi));
+ const clear=document.createElement('button');clear.textContent='Reset to environment sky';clear.onclick=()=>{state.background='';requestSerial++;applyBackground()};pane.append(clear);
+ pane.append(section('Nature & environmental audio'));
+ const sel=document.createElement('select');[['off','Off'],['forest','Forest · breeze & birds'],['wind','Wind'],['rain','Rainfall'],['ocean','Ocean / waves'],['custom','Custom audio']].forEach(([v,l])=>sel.add(new Option(l,v)));sel.value=state.audio;sel.onchange=()=>{state.audio=sel.value;stopAudio()};pane.append(field('Soundscape',sel));
+ pane.append(range('volume','Ambient volume',0,1,.05));
+ const au=fileInput('audio/mpeg,audio/wav,audio/ogg,audio/mp4',uri=>{state.customSound=uri;state.audio='custom';sel.value='custom';msg('Custom sound loaded; press Play')});pane.append(field('Import sound file',au));
+ const buttons=document.createElement('div');buttons.className='si-fx-buttons';const play=document.createElement('button');play.textContent='▶ Play ambience';play.onclick=startAudio;const stop=document.createElement('button');stop.textContent='■ Stop';stop.onclick=stopAudio;buttons.append(play,stop);pane.append(buttons);
+ const foot=document.createElement('p');foot.className='si-fx-note';foot.textContent='Audio begins after user interaction. Browser video recording may not include ambient audio. SSAO and SSR are raster post-process effects, not ray tracing.';pane.append(foot);
+}
+let panel=document.getElementById('siEnvironmentEffects');if(!panel){panel=document.createElement('section');panel.id='siEnvironmentEffects';panel.className='si-fx-pane';panel.hidden=true;root.append(panel)}
+let trigger=document.getElementById('siEffectsTab');if(!trigger){trigger=document.createElement('button');trigger.id='siEffectsTab';trigger.textContent='Effects';trigger.title='AO, reflections, water and ambient audio';const tabs=root.querySelector('.tabs');if(tabs)tabs.append(trigger);else root.prepend(trigger)}
+trigger.addEventListener('click',()=>{const open=panel.hidden;panel.hidden=!open;tab.hidden=open;trigger.classList.toggle('on',open);if(open)renderUI()});
+root.querySelectorAll('.tabs button:not(#siEffectsTab)').forEach(b=>b.addEventListener('click',()=>{panel.hidden=true;tab.hidden=false;trigger.classList.remove('on')}));
+const previousSer=A.ser.bind(A),previousDes=A.des.bind(A);
+A.ser=function(){const d=JSON.parse(previousSer());if(Array.isArray(d.objs))d.objs=d.objs.filter(o=>o.id!=='si-water-environment'&&o.n!=='Environmental Water');if(d.assets?.nodes)d.assets.nodes=d.assets.nodes.filter(o=>o.id!=='si-water-environment');d.environmentEffects={...state,background:state.background,customSound:state.customSound};return JSON.stringify(d)};
+A.des=function(input){const d=typeof input==='string'?JSON.parse(input):input;stopAudio();previousDes(JSON.stringify(d));Object.assign(state,d.environmentEffects||{water:false,background:'',audio:'off'});state.audio='off';rebuildWater();applyBackground();if(!panel.hidden)renderUI()};
+window.SI_ENVIRONMENT_EFFECTS={state,stopAudio,rebuildWater,applyBackground};
+})();
+
+</script></body></html>
 
