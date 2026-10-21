@@ -275,6 +275,19 @@ body.presentation #siCommandRibbon{display:none!important}
 #siSectionDock .siSecActions button{padding:6px 9px;flex:1 0 auto;min-width:80px}
 #siSectionDock small{display:block;color:#5a6870;line-height:1.5;margin:7px 0}
 #siDemoStatus{font-size:11px;font-weight:600;color:#254d60;margin:6px 0;overflow-wrap:anywhere}
+</style><style id="si-footer-repair-v1">
+/* Vertascan fixed status dock: never overlaps the viewport or gains a horizontal scrollbar. */
+#siStatus{box-sizing:border-box!important;width:100%!important;max-width:100%!important;flex:0 0 34px!important;min-height:34px!important;height:34px!important;display:flex!important;align-items:center!important;gap:clamp(8px,1.5vw,22px)!important;padding:0 15px!important;background:#f5f8f9!important;border-top:1px solid #cbd8dc!important;color:#334f5d!important;font-size:12px!important;line-height:1.2!important;white-space:nowrap!important;overflow:hidden!important;overflow-x:hidden!important;scrollbar-width:none!important;position:relative!important;z-index:2!important}
+#siStatus > span{display:inline-flex!important;align-items:center!important;min-width:0!important;flex:0 1 auto!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#siStatus > span:first-child{flex:0 0 auto!important;font-weight:600!important;letter-spacing:.035em!important}
+#siStatus strong{color:#21495a!important;font-weight:800!important}
+#siStatus .fill{flex:1 1 auto!important;min-width:4px!important}
+#siStatus .optional{color:#627984!important}
+#siStatus > span:nth-last-child(-n+2){font-variant-numeric:tabular-nums!important;color:#405d6a!important}
+@media(max-width:1100px){#siStatus .optional{display:none!important}}
+@media(max-width:780px){#siStatus{gap:10px!important;padding:0 10px!important;font-size:11px!important}#siStatus > span:last-child{display:none!important}}
+@media(max-width:450px){#siStatus{flex-basis:32px!important;min-height:32px!important;height:32px!important}#siStatus > span:nth-last-child(2){display:none!important}#siStatus > span:first-child{letter-spacing:0!important;font-size:10.5px!important}}
+@media(max-height:600px){#siStatus{flex-basis:29px!important;min-height:29px!important;height:29px!important}}
 </style></head><body>
 <header>
 <span class="logo"><span aria-hidden="true" class="brandMark">Si</span><span class="brandWords"><strong>Surreal Interactive</strong><small>VERTASCAN / VISUALIZATION STUDIO</small></span></span>
