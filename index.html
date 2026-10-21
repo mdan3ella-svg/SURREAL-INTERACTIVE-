@@ -375,13 +375,13 @@ function select(m){sel=m;refreshAll();window.dispatchEvent(new Event('si-select'
 function geoPack(g){const a={};for(const k of ['position','normal','uv'])if(g.attributes[k])a[k]={array:Array.from(g.attributes[k].array),itemSize:g.attributes[k].itemSize};return {attributes:a,index:g.index?Array.from(g.index.array):null};}
 function geoUnpack(d){const g=new THREE.BufferGeometry();Object.entries(d.attributes||{}).forEach(([k,v])=>g.setAttribute(k,new THREE.Float32BufferAttribute(v.array,v.itemSize)));if(d.index)g.setIndex(d.index);if(!g.attributes.normal&&g.attributes.position)g.computeVertexNormals();return g;}
 function nodeData(m){return {id:m.userData.id,t:m.userData.type,n:m.userData.name,c:m.userData.cls,p:m.position.toArray(),r:[m.rotation.x,m.rotation.y,m.rotation.z],s:m.scale.toArray(),parent:m.parent&&m.parent.userData&&m.parent.userData.id||null,locked:!!m.userData.locked,level:m.userData.level||'Level 0',discipline:m.userData.discipline||'Architecture',m:{color:'#'+m.material.color.getHexString(),metalness:m.material.metalness,roughness:m.material.roughness,opacity:m.material.opacity,emissive:'#'+m.material.emissive.getHexString()},vis:m.visible,geo:m.userData.type==='custom'?geoPack(m.geometry):null};}
-const ser=()=>JSON.stringify({v:3,title:$('#title').value,atm,cams,story:window.SI_STORY||[],cameraPaths:window.SI_CAMERA_PATHS||[],groups:(()=>{const gs=[];world.traverse(x=>{if(x!==world&&x.isGroup)gs.push(x)});return gs})().map(x=>({id:x.userData.id,n:x.name,p:x.position.toArray(),r:x.rotation.toArray().slice(0,3),s:x.scale.toArray(),parent:x.parent&&x.parent.userData&&x.parent.userData.id||null,vis:x.visible})),objs:objs.map(nodeData)});
+const ser=()=>JSON.stringify({v:3,title:$('#title').value,atm,cams,story:window.SI_STORY||[],cameraPaths:window.SI_CAMERA_PATHS||[],shotSequence:window.SI_SHOT_SEQUENCE||[],groups:(()=>{const gs=[];world.traverse(x=>{if(x!==world&&x.isGroup)gs.push(x)});return gs})().map(x=>({id:x.userData.id,n:x.name,p:x.position.toArray(),r:x.rotation.toArray().slice(0,3),s:x.scale.toArray(),parent:x.parent&&x.parent.userData&&x.parent.userData.id||null,vis:x.visible})),objs:objs.map(nodeData)});
 function des(j){const d=JSON.parse(j);objs.splice(0).forEach(m=>{m.parent.remove(m);m.geometry.dispose();m.material.dispose()});while(world.children.length)world.remove(world.children[0]);sel=null;const nodes={};
  (d.groups||[]).forEach(o=>{const g=new THREE.Group();g.name=o.n||'Group';g.userData={id:o.id||'g'+uid++};g.position.fromArray(o.p||[0,0,0]);g.rotation.set(...(o.r||[0,0,0]));g.scale.fromArray(o.s||[1,1,1]);g.visible=o.vis!==false;world.add(g);nodes[g.userData.id]=g});
  (d.objs||[]).forEach(o=>{const m=o.geo?new THREE.Mesh(geoUnpack(o.geo),new THREE.MeshPhysicalMaterial()):mk(GEO[o.t]?o.t:'box',o.n,o.p||[0,0,0],o.s||[1,1,1],null,o.r||[0,0,0]);if(o.geo){world.add(m);objs.push(m);m.position.fromArray(o.p||[0,0,0]);m.rotation.set(...(o.r||[0,0,0]));m.scale.fromArray(o.s||[1,1,1])}m.userData={id:o.id||'o'+uid++,type:o.geo?'custom':o.t,name:o.n||'Object',cls:o.c||'mass',locked:!!o.locked,level:o.level||'Level 0',discipline:o.discipline||'Architecture'};m.castShadow=m.receiveShadow=true;setMat(m,o.m||PRE.Concrete);m.visible=o.vis!==false;nodes[m.userData.id]=m});
  (d.groups||[]).forEach(o=>{const g=nodes[o.id],par=nodes[o.parent];if(g&&par&&par!==g&&!isChildOf(par,g))par.add(g)});
  (d.objs||[]).forEach(o=>{const m=nodes[o.id],par=nodes[o.parent];if(m&&par&&par!==m&&!isChildOf(par,m))par.add(m)});
- Object.assign(atm,d.atm||{});cams.splice(0,cams.length,...(d.cams||[]));window.SI_STORY=d.story||[];window.SI_CAMERA_PATHS=d.cameraPaths||[];$('#title').value=d.title||'Untitled';applyAtm();refreshAll();window.dispatchEvent(new Event('si-deserialized'))}
+ Object.assign(atm,d.atm||{});cams.splice(0,cams.length,...(d.cams||[]));window.SI_STORY=d.story||[];window.SI_CAMERA_PATHS=d.cameraPaths||[];window.SI_SHOT_SEQUENCE=d.shotSequence||[];$('#title').value=d.title||'Untitled';applyAtm();refreshAll();window.dispatchEvent(new Event('si-deserialized'))}
 function isChildOf(node,parent){let p=node.parent;while(p){if(p===parent)return true;p=p.parent}return false}
 let hist=[],hi=-1;
 function commit(l){hist=hist.slice(0,hi+1);hist.push(ser());if(hist.length>80)hist.shift();hi=hist.length-1;say(l||'Changed');refreshHier()}
@@ -724,6 +724,7 @@ record.onclick=startRecording;
 function frame(now){requestAnimationFrame(frame);if(!playing)return;if(!paused){elapsed=(now-origin)/1000;const p=current();const ratio=Math.min(1,elapsed/p.duration);placeAt(ratio);if(ratio>=1){playing=false;notice('Camera path completed');if(recording?.state==='recording')recording.stop();drawPath()}}A.R.render(A.S,A.cam)}requestAnimationFrame(frame);
 window.addEventListener('si-deserialized',()=>{finishDraw();haltPlayback();paths=window.SI_CAMERA_PATHS||[];active=0;refresh()});
 refresh();
+window.SI_PATH_DIRECTOR={setRoute(index){if(index<0||index>=paths.length)return false;haltPlayback();active=index;refresh();return true},placeAt,stop:haltPlayback,hideGuide(){cleanup()},showGuide:drawPath,getRoutes:()=>paths};
 })();
 </script>
 <script id="surrealSequenceWorkbench">
@@ -1256,6 +1257,94 @@ let queued=false;const observer=new MutationObserver(()=>{if(queued)return;queue
 reflect();window.SI_PROCEDURAL_MATERIALS={patterns,settings,apply,applyCustom};
 })();
 
+</script>
+
+<style id="si-sequence-director-css">
+#siSequenceDirector{font:12px/1.5 system-ui,Segoe UI,sans-serif;color:#253b46;background:#f9fbfc;border-top:1px solid #cedbe0;padding:11px 14px;min-width:0}
+#siSequenceDirector *{box-sizing:border-box}#siSequenceDirector .seqBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+#siSequenceDirector button,#siSequenceDirector select,#siSequenceDirector input{font:inherit;background:#fff;border:1px solid #bacbd3;border-radius:5px;padding:6px 8px;color:#203844;min-width:0}
+#siSequenceDirector button{cursor:pointer;min-height:30px;white-space:nowrap}#siSequenceDirector button:hover{border-color:#24556d;background:#eef4f6}
+#siSequenceDirector button.primary,#siSequenceDirector button.active{background:#24556d;color:#fff;border-color:#24556d}
+#siSequenceDirector h3{font-size:12px;letter-spacing:.08em;margin:0 8px 0 0;color:#193e50}
+#siSequenceDirector .seqTracks{display:flex;overflow-x:auto;gap:6px;padding:3px 0 9px;scrollbar-width:thin;min-width:0}
+#siSequenceDirector .seqClip{flex:0 0 155px;min-height:64px;text-align:left;display:flex;flex-direction:column;gap:3px;white-space:normal!important;border-left:4px solid #527e91}
+#siSequenceDirector .seqClip.selected{background:#dfecef;border-color:#1a526e;color:#173b4e}
+#siSequenceDirector .seqClip .time{font-size:10px;opacity:.8}
+#siSequenceDirector .seqFields{display:grid;grid-template-columns: minmax(120px,1.4fr) repeat(2,minmax(78px,.7fr)) minmax(125px,1.1fr) repeat(3,minmax(75px,.65fr));gap:7px;align-items:end}
+#siSequenceDirector label{display:flex;flex-direction:column;gap:3px;font-size:10px;letter-spacing:.015em;color:#415d69;min-width:0}
+#siSequenceDirector label input,#siSequenceDirector label select{width:100%}
+#siSequenceDirector .seqStatus{font-size:11px;color:#425f6a;margin-left:auto}
+#siSequenceDirector .seqProgress{height:4px;background:#d7e2e6;border-radius:8px;overflow:hidden;margin-top:10px}
+#siSequenceDirector .seqProgress>span{display:block;background:#28627c;width:0%;height:100%}
+@media(max-width:900px){#siSequenceDirector .seqFields{grid-template-columns:repeat(3,minmax(0,1fr))}#siSequenceDirector .seqStatus{width:100%}}
+@media(max-width:500px){#siSequenceDirector .seqFields{grid-template-columns:repeat(2,minmax(0,1fr))}#siSequenceDirector{padding:8px}}
+</style>
+<script id="si-sequence-director-script">
+(function(){'use strict';
+const app=window.SI, api=window.SI_PATH_DIRECTOR, dock=document.getElementById('bottomDock')||document.getElementById('pathStudio');
+if(!app||!api||!dock)return;
+const el=(tag,parent,txt)=>{const n=document.createElement(tag);if(txt)n.textContent=txt;parent.append(n);return n};
+const root=el('section',dock);root.id='siSequenceDirector';root.setAttribute('aria-label','Camera sequence timeline');
+// Place sequence above the individual path inspector, within the same collapsible camera workspace.
+const pathStudio=document.getElementById('pathStudio');if(pathStudio&&pathStudio.parentNode)pathStudio.before(root);
+const bar=el('div',root);bar.className='seqBar';el('h3',bar,'SHOT SEQUENCER');
+const add=el('button',bar,'+ Add current route'),copy=el('button',bar,'Duplicate shot'),remove=el('button',bar,'Delete shot');
+const prev=el('button',bar,'◀ Move earlier'),next=el('button',bar,'Move later ▶');
+const play=el('button',bar,'▶ Play sequence');play.className='primary';
+const pause=el('button',bar,'Ⅱ Pause'),stop=el('button',bar,'■ Stop'),rec=el('button',bar,'● Record sequence');
+const fps=el('select',bar);[24,25,30,60].forEach(v=>{const o=el('option',fps,v+' fps');o.value=v});fps.value='30';
+const status=el('span',bar,'Add a route to create a shot sequence');status.className='seqStatus';
+const track=el('div',root);track.className='seqTracks';
+const fields=el('div',root);fields.className='seqFields';
+const field=(label,type='text')=>{const wrap=el('label',fields);el('span',wrap,label);const input=el('input',wrap);input.type=type;return input};
+const name=field('Shot title'),route=(()=>{const wrap=el('label',fields);el('span',wrap,'Camera route');return el('select',wrap)})();
+const duration=field('Duration (s)','number'),lens=field('Lens FOV (°)','number');
+const mode=(()=>{const wrap=el('label',fields);el('span',wrap,'Look calibration');const x=el('select',wrap);[['route','Use route setting'],['direction','Follow direction'],['subject','Look at project'],['point','Look at XYZ point']].forEach(([v,n])=>{const o=el('option',x,n);o.value=v});return x})();
+const tx=field('Look X (m)','number'),ty=field('Look Y (m)','number'),tz=field('Look Z (m)','number');
+const prog=el('div',root);prog.className='seqProgress';const fill=el('span',prog);
+let shots=Array.isArray(window.SI_SHOT_SEQUENCE)?window.SI_SHOT_SEQUENCE:[],idx=0,running=false,paused=false,startMs=0,elapsed=0,lastRoute=-1,raf=0,recorder=null,chunks=[],stream=null;
+const routes=()=>api.getRoutes()||[];
+const defaultShot=(routeIndex)=>({name:'Shot '+(shots.length+1),routeIndex,duration:Math.max(1,+(routes()[routeIndex]?.duration||8)),fov:+(routes()[routeIndex]?.fov||45),look:'route',target:[0,2,0]});
+function persist(){window.SI_SHOT_SEQUENCE=shots;try{app.commit?.('Shot sequence updated')}catch(_){} }
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function refresh(){idx=clamp(idx,0,Math.max(0,shots.length-1));track.replaceChildren();
+shots.forEach((s,i)=>{const b=el('button',track);b.className='seqClip'+(i===idx?' selected':'');const t=el('strong',b,(i+1)+'. '+(s.name||'Shot'));t.style.fontSize='11px';el('span',b,(routes()[s.routeIndex]?.name||'Missing route')).className='time';el('span',b,Number(s.duration||0).toFixed(1)+'s · '+Number(s.fov||45)+'°').className='time';b.onclick=()=>{if(running)return;idx=i;refresh();selectRoute()}});
+route.replaceChildren();routes().forEach((r,i)=>{const o=el('option',route,r.name||('Route '+(i+1)));o.value=i});
+const s=shots[idx];fields.style.display=s?'grid':'none';
+for(const b of [copy,remove,prev,next,play,rec])b.disabled=!shots.length;
+if(s){name.value=s.name||'';route.value=s.routeIndex;duration.value=s.duration;lens.value=s.fov;mode.value=s.look||'route';[tx,ty,tz].forEach((n,j)=>n.value=(s.target||[0,2,0])[j]);}
+if(!running)status.textContent=shots.length?`${shots.length} shots · ${shots.reduce((a,s)=>a+Math.max(0,+s.duration||0),0).toFixed(1)}s total`:'Add a route to create a shot sequence';
+}
+function selectRoute(){const s=shots[idx];if(s)api.setRoute(+s.routeIndex)}
+function modify(){if(!shots[idx]||running)return;const s=shots[idx];s.name=name.value.slice(0,80)||'Untitled shot';s.routeIndex=+route.value;s.duration=clamp(+duration.value||1,.2,3600);s.fov=clamp(+lens.value||45,15,100);s.look=mode.value;s.target=[tx,ty,tz].map(x=>Number.isFinite(+x.value)?+x.value:0);persist();refresh()}
+[name,route,duration,lens,mode,tx,ty,tz].forEach(x=>x.addEventListener('change',modify));
+add.onclick=()=>{const picker=document.querySelector('#pathStudio select');const r=picker?Number(picker.value):0;shots.push(defaultShot(clamp(r,0,Math.max(0,routes().length-1))));idx=shots.length-1;persist();refresh()};
+copy.onclick=()=>{if(!shots[idx])return;shots.splice(idx+1,0,JSON.parse(JSON.stringify(shots[idx])));idx++;shots[idx].name+=' Copy';persist();refresh()};
+remove.onclick=()=>{shots.splice(idx,1);idx=Math.max(0,idx-1);persist();refresh()};
+prev.onclick=()=>{if(idx<1)return;[shots[idx-1],shots[idx]]=[shots[idx],shots[idx-1]];idx--;persist();refresh()};
+next.onclick=()=>{if(idx>=shots.length-1)return;[shots[idx+1],shots[idx]]=[shots[idx],shots[idx+1]];idx++;persist();refresh()};
+function start(){if(!shots.length)return;const valid=shots.every(s=>(routes()[s.routeIndex]?.points?.length||0)>=2);if(!valid){status.textContent='One or more shots has no valid camera route (2+ points).';return}api.stop();api.hideGuide();running=true;paused=false;elapsed=0;lastRoute=-1;startMs=performance.now();pause.textContent='Ⅱ Pause';play.textContent='▶ Restart sequence';tick(performance.now())}
+function stopSequence(){running=false;paused=false;cancelAnimationFrame(raf);elapsed=0;lastRoute=-1;fill.style.width='0%';pause.textContent='Ⅱ Pause';play.textContent='▶ Play sequence';api.showGuide();if(recorder?.state==='recording')recorder.stop();refresh()}
+function tick(now){if(!running)return;if(!paused){elapsed=(now-startMs)/1000;const total=shots.reduce((a,s)=>a+Math.max(.2,+s.duration||1),0);if(elapsed>=total){stopSequence();return}
+let offset=0,shotIndex=0;for(let i=0;i<shots.length;i++){const d=Math.max(.2,+shots[i].duration||1);if(elapsed<offset+d){shotIndex=i;break}offset+=d}
+const s=shots[shotIndex],p=routes()[s.routeIndex],t=clamp((elapsed-offset)/Math.max(.2,+s.duration||1),0,1);
+if(lastRoute!==s.routeIndex){api.setRoute(s.routeIndex);api.hideGuide();lastRoute=s.routeIndex}
+// Use original interpolated route with per-shot FOV and optional calibrated look target.
+api.placeAt(t);app.cam.fov=clamp(+s.fov||45,15,100);app.cam.updateProjectionMatrix();
+if(s.look==='subject'||s.look==='point'||s.look==='direction'){
+const target=s.look==='point'?new app.THREE.Vector3(...(s.target||[0,2,0])):s.look==='subject'?new app.THREE.Box3().setFromObject(app.world).getCenter(new app.THREE.Vector3()):null;
+if(target)app.cam.lookAt(target);
+if(s.look==='direction'&&p?.points?.length>1){const curve=new app.THREE.CatmullRomCurve3(p.points.map(q=>new app.THREE.Vector3(...q)),false,'centripetal',.5);const tangent=curve.getTangentAt(Math.min(.999,t)).normalize();app.cam.lookAt(app.cam.position.clone().add(tangent))}
+}
+idx=shotIndex;fill.style.width=(elapsed/total*100).toFixed(2)+'%';status.textContent=`Shot ${shotIndex+1}/${shots.length} · ${s.name} · ${elapsed.toFixed(1)} / ${total.toFixed(1)}s`;
+app.R.render(app.S,app.cam);
+}
+raf=requestAnimationFrame(tick)}
+play.onclick=()=>{if(running)stopSequence();start()};pause.onclick=()=>{if(!running)return;paused=!paused;if(!paused)startMs=performance.now()-elapsed*1000;pause.textContent=paused?'▶ Resume':'Ⅱ Pause'};stop.onclick=stopSequence;
+rec.onclick=()=>{if(recorder?.state==='recording'){stopSequence();return}if(!app.R?.domElement?.captureStream||!window.MediaRecorder){status.textContent='WebM recording unavailable in this browser';return}const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));if(!mime){status.textContent='WebM codec unavailable';return}try{stream=app.R.domElement.captureStream(+fps.value);recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:6500000});chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onstop=()=>{stream?.getTracks().forEach(t=>t.stop());const blob=new Blob(chunks,{type:mime});if(blob.size){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=(document.getElementById('title')?.value||'Surreal').replace(/[^a-z0-9_-]/gi,'_')+'_Shot_Sequence.webm';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),20000)}rec.textContent='● Record sequence';recorder=null};recorder.start(500);rec.textContent='■ Finish recording';start()}catch(e){status.textContent='Capture error: '+e.message}}
+window.addEventListener('si-deserialized',()=>{stopSequence();shots=Array.isArray(window.SI_SHOT_SEQUENCE)?window.SI_SHOT_SEQUENCE:[];idx=0;refresh()});
+refresh();
+})();
 </script>
 </body></html>
 
