@@ -227,6 +227,11 @@ button:focus-visible,.siFoldHead:focus-visible,summary:focus-visible{outline:2px
 @media(max-width:850px){#rail{width:125px!important;min-width:125px!important;flex-basis:125px!important}#side{width:260px!important;flex-basis:260px!important}#siLeftHandle,#siRightHandle{width:29px!important;min-width:29px!important;flex-basis:29px!important}#side .tabs button{font-size:11px!important}}
 @media(max-width:680px){header{height:56px!important;min-height:56px!important;flex-basis:56px!important}#siRailShell{max-width:45vw!important}#rail{width:112px!important;min-width:112px!important;flex-basis:112px!important}#side{position:absolute!important;right:29px!important;top:0!important;bottom:0!important;width:min(320px,calc(100% - 48px))!important;flex-basis:auto!important;box-shadow:-8px 0 22px #15394422!important;z-index:14!important}body.siSideClosed #side{display:none!important}#siBottom{max-height:45vh!important}#siStatus .optional{display:none!important}}
 @media(max-height:590px){#siBottom{max-height:30vh!important}#pathStudio{max-height:18vh!important}header{height:48px!important;min-height:48px!important;flex-basis:48px!important}}
+</style><style id="si-controls-hotfix">
+#siGraphicsNotice{position:absolute;z-index:7;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(500px,88%);padding:19px 22px;border:1px solid #b9cdd1;background:#ffffffed;color:#193847;box-shadow:0 12px 35px #122d3c24;border-radius:10px;pointer-events:none;text-align:center;display:grid;gap:8px;font-size:13px;line-height:1.5}
+#siGraphicsNotice strong{font-size:14px;letter-spacing:.09em}#siGraphicsNotice span{color:#375363}
+button:not(:disabled){cursor:pointer!important;opacity:1}button:focus-visible,summary:focus-visible,[role=button]:focus-visible{outline:2px solid #20617d!important;outline-offset:2px}
+#siViewTools,#siBottom,#siHeaderActions,.siFoldHead{pointer-events:auto}
 </style></head><body>
 <header>
 <span class="logo"><span aria-hidden="true" class="brandMark">Si</span><span class="brandWords"><strong>Surreal Interactive</strong><small>VERTASCAN / VISUALIZATION STUDIO</small></span></span>
@@ -258,7 +263,19 @@ button:focus-visible,.siFoldHead:focus-visible,summary:focus-visible{outline:2px
 const $=s=>document.querySelector(s),vp=$('#vp');
 const say=t=>{$('#msg').textContent=t};
 // ---------- engine ----------
-const R=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+// Initialize controls even if this browser cannot allocate a GPU context.
+let R,siGraphicsAvailable=true,siGraphicsError='';
+try { R=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true}); }
+catch(error){
+ siGraphicsAvailable=false;siGraphicsError=String(error?.message||error);
+ console.warn('[Surreal Interactive] Graphics disabled; editor and file tools remain operational:',siGraphicsError);
+ const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=800;
+ const cx=canvas.getContext('2d');
+ const drawFallback=()=>{const w=canvas.width,h=canvas.height;cx.fillStyle='#f4f6f6';cx.fillRect(0,0,w,h);cx.strokeStyle='#d6dfe1';cx.lineWidth=1;for(let x=0;x<w;x+=50){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,h);cx.stroke()}for(let y=0;y<h;y+=50){cx.beginPath();cx.moveTo(0,y);cx.lineTo(w,y);cx.stroke()}};
+ drawFallback();
+ R={domElement:canvas,shadowMap:{enabled:false,type:0},capabilities:{maxTextureSize:4096},toneMappingExposure:1,info:{render:{calls:0,triangles:0}},setPixelRatio(){},getPixelRatio(){return 1},setSize(w,h){canvas.width=Math.max(1,Math.round(w));canvas.height=Math.max(1,Math.round(h));drawFallback()},getSize(out){return out.set(canvas.width,canvas.height)},render(){},setRenderTarget(){},getRenderTarget(){return null}};
+}
+window.SI_GRAPHICS_AVAILABLE=siGraphicsAvailable;
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.toneMapping=THREE.ACESFilmicToneMapping;R.outputEncoding=THREE.sRGBEncoding;
 vp.insertBefore(R.domElement,vp.firstChild);
 const S=new THREE.Scene();S.background=new THREE.Color(0xeeeeec);S.fog=new THREE.FogExp2(0xeeeeec,0.004);
@@ -421,14 +438,18 @@ demo();applyAtm();resize();preset('Persp');
 cams.push({n:'Hero',p:[16,7,22],t:[0,2,0],d:3,f:45},{n:'Entrance',p:[2,2,11],t:[0,1.8,0],d:3,f:45},{n:'Roof reveal',p:[-14,14,-10],t:[0,2,0],d:3,f:45});
 hist=[ser()];hi=0;refreshAll();
 window.SI={THREE,R,S,cam,world,objs,cams,atm,orb,ground,grid,sun,hemi,PRE,mk,setMat,select,commit,ser,des,applyAtm,preset,goCam,saveCam,playSeq,resize,refreshAll,refreshSide,say,addArch,add,del,dup,get selected(){return sel},get mode(){return mode},set mode(v){mode=v},get snap(){return snap}};
-say('Demo pavilion loaded — drag to orbit, click to select');
+if(!siGraphicsAvailable){
+ const notice=document.createElement('div');notice.id='siGraphicsNotice';notice.setAttribute('role','status');
+ notice.innerHTML='<strong>3D VIEW OFFLINE</strong><span>Graphics context unavailable. Toolbars, hierarchy and project controls remain available. Open in Chrome or Edge with WebGL enabled for model interaction.</span>';
+ vp.append(notice);say('Workspace ready · 3D graphics unavailable');
+}else{say('Demo pavilion loaded — drag to orbit, click to select');} 
 // ---------- loop ----------
 let last=performance.now(),fc=0,ft=0;
 function loop(now){requestAnimationFrame(loop);
  if(tween){const t=Math.min(1,(now-tween.s)/1200),e=ease(t);setCamFrom(tween.p0.clone().lerp(tween.p1,e),tween.t0.clone().lerp(tween.t1,e));if(t>=1)tween=null}
  if(play){const el=(now-play.s)/1000;let acc=0,done=true;for(let i=0;i<cams.length-1;i++){const d=cams[i].d;if(el<acc+d){const e=ease((el-acc)/d),a=cams[i],b=cams[i+1];setCamFrom(new THREE.Vector3(...a.p).lerp(new THREE.Vector3(...b.p),e),new THREE.Vector3(...a.t).lerp(new THREE.Vector3(...b.t),e));done=false;break}acc+=d}
   if(done){play=null;say('Sequence finished')}}
- R.render(S,cam);fc++;ft+=now-last;last=now;if(ft>500){$('#fps').textContent=Math.round(fc*1000/ft)+' fps · '+R.info.render.calls+' draws · '+(R.info.render.triangles/1000).toFixed(1)+'k tris';fc=0;ft=0}}
+ if(siGraphicsAvailable)R.render(S,cam);fc++;ft+=now-last;last=now;if(ft>500){$('#fps').textContent=Math.round(fc*1000/ft)+' fps · '+R.info.render.calls+' draws · '+(R.info.render.triangles/1000).toFixed(1)+'k tris';fc=0;ft=0}}
 requestAnimationFrame(loop);
 })();
 </script>
@@ -498,7 +519,7 @@ let selectedIDs=new Set(),units='m',step=.1,settingSelection=false,focus=()=>A.s
 const b=(p,s,fn)=>{const e=document.createElement('button');e.textContent=s;e.onclick=fn;p.append(e);return e};
 const download=(name,blob)=>{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),18000)};
 const addLabel=(p,t)=>{const d=document.createElement('div');d.className='toolTitle';d.textContent=t;p.append(d)};
-const row=(p,t,kind,value,fn)=>{const d=document.createElement('div');d.className='field',l=document.createElement('label'),e=document.createElement(kind==='select'?'select':'input');l.textContent=t;if(kind==='select'){for(const x of value){const o=document.createElement('option');o.value=x;o.textContent=x;e.append(o)}}else{e.type=kind;e.value=value}d.append(l,e);p.append(d);e.onchange=()=>fn(e.value);return e};
+const row=(p,t,kind,value,fn)=>{const d=document.createElement('div'),l=document.createElement('label'),e=document.createElement(kind==='select'?'select':'input');d.className='field';l.textContent=t;if(kind==='select'){for(const x of value){const o=document.createElement('option');o.value=x;o.textContent=x;e.append(o)}}else{e.type=kind;e.value=value}d.append(l,e);p.append(d);e.onchange=()=>fn(e.value);return e};
 const oldRail=$('#rail');const opener=b(oldRail,'◫ SCENE',()=>dock.classList.toggle('open'));opener.title='Scene hierarchy and precision modeling';
 const dock=document.createElement('div');dock.id='modelDock';dock.innerHTML='<h4>MODEL ENGINE  /  SCENE GRAPH</h4><div id="modelTree"></div>';$('#vp').append(dock);const tree=$('#modelTree');const tools=document.createElement('div');dock.append(tools);
 const objectById=id=>{let out=null;world.traverse(o=>{if(o.userData&&o.userData.id===id)out=o});return out};
