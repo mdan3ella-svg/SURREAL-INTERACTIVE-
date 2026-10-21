@@ -288,7 +288,11 @@ body.presentation #siCommandRibbon{display:none!important}
 @media(max-width:780px){#siStatus{gap:10px!important;padding:0 10px!important;font-size:11px!important}#siStatus > span:last-child{display:none!important}}
 @media(max-width:450px){#siStatus{flex-basis:32px!important;min-height:32px!important;height:32px!important}#siStatus > span:nth-last-child(2){display:none!important}#siStatus > span:first-child{letter-spacing:0!important;font-size:10.5px!important}}
 @media(max-height:600px){#siStatus{flex-basis:29px!important;min-height:29px!important;height:29px!important}}
-</style></head><body>
+</style><style id="si-footer-screen-safe">
+html,body{height:100%;overflow:hidden!important}body{min-height:0!important;max-height:100dvh!important}#main{min-height:0!important;flex:1 1 auto!important}#vp{min-height:0!important}#cameraDirector,#cameraDock,#storyboardDock{max-width:100%}footer,#si-footer{position:relative!important;flex:0 0 auto;max-height:42px;overflow:hidden}
+</style>
+
+</head><body>
 <header>
 <span class="logo"><span aria-hidden="true" class="brandMark">Si</span><span class="brandWords"><strong>Surreal Interactive</strong><small>VERTASCAN / VISUALIZATION STUDIO</small></span></span>
 <input id="title" style="width:130px;background:var(--wh);border:1px solid var(--ln);border-radius:3px;padding:2px 5px" type="text" value="Demo Pavilion"/>
@@ -560,115 +564,14 @@ let recorder,parts=[],recordStop;
 btn('Record WebM',()=>{if(recorder&&recorder.state==='recording'){recorder.stop();return}if(!A.R.domElement.captureStream||!window.MediaRecorder)return A.say('MediaRecorder unavailable in this browser');try{const stream=A.R.domElement.captureStream(30);const format=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));if(!format)return A.say('WebM recording unsupported');recorder=new MediaRecorder(stream,{mimeType:format});parts=[];recorder.ondataavailable=e=>{if(e.data.size)parts.push(e.data)};recorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop());download(filename()+'.webm',new Blob(parts,{type:format}));A.say('WebM saved')};recorder.start();A.playSeq();A.say('Recording WebM. Press Record WebM again to stop.')}catch(e){A.say('Recording failed: '+e.message)}},actions);
 const foot=document.createElement('p');foot.className='siNote';foot.textContent='Real-time raster rendering. GPU path tracing, certified BIM Booleans, native IFC import, and MP4/PDF authoring are not included in this compact offline edition. Use browser print to PDF for storyboard pages.';ext.appendChild(foot);
 // Client HTML embeds the entire offline editor + project but enters restricted presentation mode on load
-$('#clientExport').onclick=()=>{try{const source=document.documentElement.outerHTML;const data=JSON.stringify(JSON.parse(A.ser())).replace(/</g,'\\u003c');const injection=`<script>window.addEventListener('load',function(){try{SI.des(JSON.stringify(${data}));document.body.classList.add('presentation');document.querySelector('#clientBar').style.display='flex';document.querySelector('#clientBar button:last-child').style.display='none';}catch(e){console.error(e)} });${'</scr'+'ipt>'}`;const out='<!DOCTYPE html>\n'+source.replace('<script>
-(()=>{'use strict';
-const A=window.SI,T=A?.THREE;
-if(!A||!T)return;
-const patterns=['Concrete','Brick','Timber','Stone','Ceramic','Terrazzo','Metal','Hatch 45°','Crosshatch','Grid','Dots','Solid'];
-const presets={Concrete:['#c3c6c3','#858a88'],Brick:['#b57765','#e2d4c8'],Timber:['#b99162','#6f543a'],Stone:['#b7b1a5','#827d77'],Ceramic:['#dddcd3','#8c8e88'],Terrazzo:['#d7d4cd','#8e918b'],Metal:['#a4afb5','#62727c'],'Hatch 45°':['#f2f2ef','#5f6d73'],Crosshatch:['#f4f5f3','#576875'],Grid:['#f6f6f2','#7d878a'],Dots:['#f6f6f4','#6f7778'],Solid:['#d1d2cf','#d1d2cf']};
-const defaults=()=>({pattern:'Concrete',base:'#c3c6c3',detail:'#858a88',spacing:24,line:2,repeat:2,angle:0,roughness:.82,metalness:0,bump:.12});
-let settings=defaults(),customURI=null,customName='';
-const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
-const ctx=canvas.getContext('2d');
-function renderPattern(){const c=ctx,n=512,s=Math.max(8,Math.min(128,+settings.spacing||24));c.clearRect(0,0,n,n);c.fillStyle=settings.base;c.fillRect(0,0,n,n);c.strokeStyle=settings.detail;c.fillStyle=settings.detail;c.lineWidth=Math.max(.5,+settings.line||1);const name=settings.pattern;
-if(name==='Solid')return;
-if(name==='Concrete'){for(let y=0;y<n;y+=4)for(let x=0;x<n;x+=4){const q=(Math.sin(x*112.13+y*92.73)*43758.5453)%1;c.globalAlpha=.035+Math.abs(q)*.13;c.fillRect(x,y,2,2)}c.globalAlpha=1;return;}
-if(name==='Brick'){const h=s,w=s*2;for(let y=0,r=0;y<n+h;y+=h,r++){c.beginPath();c.moveTo(0,y);c.lineTo(n,y);c.stroke();for(let x=(r%2)*w/2;x<n+w;x+=w){c.beginPath();c.moveTo(x,y);c.lineTo(x,y+h);c.stroke()}}return;}
-if(name==='Timber'){for(let y=0;y<n;y+=s){c.beginPath();for(let x=0;x<=n;x+=5){const yy=y+Math.sin(x*.033+y)*2+Math.sin(x*.08+y*.13)*1.2;x?c.lineTo(x,yy):c.moveTo(x,yy)}c.stroke()}return;}
-if(name==='Stone'){for(let y=0;y<n+s;y+=s){c.beginPath();c.moveTo(0,y);c.lineTo(n,y);c.stroke();for(let x=(Math.floor(y/s)%3)*s/2;x<n+s*2;x+=s*2){c.beginPath();c.moveTo(x,y);c.lineTo(x+Math.sin(x+y)*s*.12,y+s);c.stroke()}}return;}
-if(name==='Ceramic'||name==='Grid'){for(let q=0;q<=n;q+=s){c.beginPath();c.moveTo(q,0);c.lineTo(q,n);c.moveTo(0,q);c.lineTo(n,q);c.stroke()}return;}
-if(name==='Terrazzo'){for(let k=0;k<1200;k++){let x=(k*73.733)%512,y=(k*194.31)%512,r=1+(k%9)*.45;c.beginPath();c.moveTo(x-r,y);c.lineTo(x+r,y-2);c.lineTo(x+r*.5,y+r);c.fill()}return;}
-if(name==='Metal'){for(let y=0;y<n;y+=3){c.globalAlpha=.05+((y*13)%7)*.01;c.fillRect(0,y,n,1)}c.globalAlpha=1;return;}
-if(name==='Hatch 45°'||name==='Crosshatch'){for(const direction of name==='Crosshatch'?[1,-1]:[1])for(let x=-n;x<n*2;x+=s){c.beginPath();c.moveTo(x,0);c.lineTo(x+direction*n,n);c.stroke()}return;}
-if(name==='Dots'){for(let y=s/2;y<n;y+=s)for(let x=s/2;x<n;x+=s){c.beginPath();c.arc(x,y,Math.max(1,+settings.line*1.5),0,Math.PI*2);c.fill()}}}
-function getMesh(){const m=A.selected;if(!m){A.say?.('Select an architectural mesh before applying a material');return null}if(!m.isMesh){let child=null;m.traverse?.(o=>{if(!child&&o.isMesh)child=o});if(!child){A.say?.('Selected group contains no editable mesh');return null}return child}return m}
-function applyTexture(tex,kind='procedural'){
-const obj=getMesh();if(!obj)return;
-// Distinct material instance so neighbouring meshes remain unchanged.
-let m=Array.isArray(obj.material)?obj.material[0]:obj.material;
-if(!m)return;
-const mat=m.clone();if(mat.map&&mat.map!==tex){};
-tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.repeat.set(settings.repeat,settings.repeat);tex.rotation=+settings.angle*Math.PI/180;tex.center.set(.5,.5);tex.needsUpdate=true;
-mat.map=tex;mat.color.set('#ffffff');mat.roughness=+settings.roughness;mat.metalness=+settings.metalness;
-if('bumpScale'in mat){mat.bumpMap=kind==='procedural'?tex:null;mat.bumpScale=kind==='procedural'?settings.bump:0}
-mat.needsUpdate=true;
-if(Array.isArray(obj.material)){obj.material=obj.material.map((v,i)=>i===0?mat:v)}else obj.material=mat;
-obj.userData.siMaterialDesign={...settings,source:kind,name:kind==='custom'?customName:settings.pattern};
-A.commit?.('Architectural material '+(kind==='custom'?customName:settings.pattern));A.say?.('Applied '+(kind==='custom'?customName:settings.pattern)+' to '+(obj.name||'selected object'));
-}
-function apply(){renderPattern();const tex=new T.CanvasTexture(canvas);tex.name='Surreal procedural: '+settings.pattern;applyTexture(tex)}
-function applyCustom(){if(!customURI)return A.say?.('Select a texture image first');new T.TextureLoader().load(customURI,tex=>{tex.name=customName;tex.userData.sourceURI=customURI;applyTexture(tex,'custom')},undefined,()=>A.say?.('Could not decode texture image'))}
-const css=document.createElement('style');css.textContent=`#siMaterialStudio{border:1px solid var(--ln);background:var(--p, var(--wh));border-radius:8px;padding:12px;margin:9px 0;color:var(--tx);font-size:13px}#siMaterialStudio h3{font-size:14px;margin:0 0 8px}#siMaterialStudio .si-mrow{display:grid;grid-template-columns:98px minmax(0,1fr);align-items:center;gap:8px;margin:8px 0}#siMaterialStudio label{color:var(--tx);font-size:12px;font-weight:600}#siMaterialStudio input,#siMaterialStudio select{width:100%;min-width:0;min-height:32px;font-size:13px}#siMaterialStudio .si-material-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}#siMaterialStudio button{min-height:34px;font-size:12px;white-space:normal;color:var(--tx);background:var(--wh)}#siMaterialStudio button.si-primary{background:#254d60;color:white;border-color:#254d60;font-weight:700}#siMaterialStudio canvas{height:96px;width:100%;object-fit:cover;border:1px solid var(--ln);border-radius:5px}#siMaterialStudio .si-small{font-size:11px;color:var(--mu);line-height:1.5}`;document.head.append(css);
-const host=document.createElement('div');host.id='siMaterialStudio';host.innerHTML=`<h3>Architectural Texture Studio</h3><canvas id="siMatPreview" width="512" height="512" aria-label="Procedural texture preview"></canvas><div class="si-mrow"><label for="siPattern">Pattern</label><select id="siPattern"></select></div><div class="si-mrow"><label for="siBase">Base colour</label><input id="siBase" type="color"></div><div class="si-mrow"><label for="siDetail">Hatch colour</label><input id="siDetail" type="color"></div><div class="si-mrow"><label for="siSpacing">Spacing (px)</label><input id="siSpacing" type="number" min="8" max="128"></div><div class="si-mrow"><label for="siLine">Line width</label><input id="siLine" type="number" min="0.5" max="12" step="0.5"></div><div class="si-mrow"><label for="siRepeat">UV tiling</label><input id="siRepeat" type="number" min="0.1" max="50" step="0.1"></div><div class="si-mrow"><label for="siAngle">Rotation °</label><input id="siAngle" type="number" min="-360" max="360" step="5"></div><div class="si-mrow"><label for="siRough">Roughness</label><input id="siRough" type="range" min="0" max="1" step="0.01"></div><div class="si-mrow"><label for="siMetal">Metallic</label><input id="siMetal" type="range" min="0" max="1" step="0.01"></div><div class="si-mrow"><label for="siBump">Relief</label><input id="siBump" type="range" min="0" max="0.5" step="0.01"></div><div class="si-material-actions"><button id="siMatApply" class="si-primary">Apply to selection</button><button id="siMatClear">Remove texture</button></div><div class="si-mrow"><label for="siCustomFile">Import image</label><input id="siCustomFile" type="file" accept="image/png,image/jpeg,image/webp,image/bmp"></div><button id="siCustomApply" class="si-primary" style="width:100%">Apply imported image</button><p class="si-small">Procedural colour hatches and image textures are mapped to selected geometry. They are appearance effects, not physically modeled joints. UV repeat uses existing mesh UV coordinates. Textures are embedded in .surreal asset saves when image data can be accessed.</p>`;
-const $=s=>host.querySelector(s);patterns.forEach(n=>{$('#siPattern').add(new Option(n,n))});
-const inputs=[['pattern','#siPattern'],['base','#siBase'],['detail','#siDetail'],['spacing','#siSpacing'],['line','#siLine'],['repeat','#siRepeat'],['angle','#siAngle'],['roughness','#siRough'],['metalness','#siMetal'],['bump','#siBump']];
-function reflect(){for(const [key,id]of inputs)$(id).value=settings[key];renderPattern();const p=$('#siMatPreview');p.getContext('2d').clearRect(0,0,512,512);p.getContext('2d').drawImage(canvas,0,0)}
-for(const[key,id]of inputs){$(id).addEventListener('input',()=>{settings[key]=['pattern','base','detail'].includes(key)?$(id).value:Number($(id).value);if(key==='pattern'){const v=presets[settings.pattern];settings.base=v[0];settings.detail=v[1]}reflect()})}
-$('#siMatApply').onclick=apply;
-$('#siMatClear').onclick=()=>{const o=getMesh();if(!o)return;const mats=Array.isArray(o.material)?o.material:[o.material];for(let i=0;i<mats.length;i++){const m=mats[i].clone();m.map=null;m.bumpMap=null;m.color.set('#ffffff');m.needsUpdate=true;if(Array.isArray(o.material))o.material[i]=m;else o.material=m}A.commit?.('Remove texture');A.say?.('Material texture removed')};
-$('#siCustomFile').onchange=()=>{const file=$('#siCustomFile').files?.[0];if(!file)return;if(file.size>24*1024*1024)return A.say?.('Texture exceeds 24 MB input limit');customName=file.name;const reader=new FileReader();reader.onload=()=>{customURI=reader.result;A.say?.('Imported texture: '+file.name)};reader.readAsDataURL(file)};
-$('#siCustomApply').onclick=applyCustom;
-// Attach after Material tab is rebuilt by core renderer, no modification of core UI internals.
-let queued=false;const observer=new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;const root=document.getElementById('tab');if(!root||host.parentElement===root)return;const active=document.querySelector('.tabs [data-t="mat"].on');if(active)root.append(host)})});const tab=document.getElementById('tab');if(tab)observer.observe(tab,{childList:true});
-reflect();window.SI_PROCEDURAL_MATERIALS={patterns,settings,apply,applyCustom};
-})();
-
-</script>
-</body>',injection+'<script>
-(()=>{'use strict';
-const A=window.SI,T=A?.THREE;
-if(!A||!T)return;
-const patterns=['Concrete','Brick','Timber','Stone','Ceramic','Terrazzo','Metal','Hatch 45°','Crosshatch','Grid','Dots','Solid'];
-const presets={Concrete:['#c3c6c3','#858a88'],Brick:['#b57765','#e2d4c8'],Timber:['#b99162','#6f543a'],Stone:['#b7b1a5','#827d77'],Ceramic:['#dddcd3','#8c8e88'],Terrazzo:['#d7d4cd','#8e918b'],Metal:['#a4afb5','#62727c'],'Hatch 45°':['#f2f2ef','#5f6d73'],Crosshatch:['#f4f5f3','#576875'],Grid:['#f6f6f2','#7d878a'],Dots:['#f6f6f4','#6f7778'],Solid:['#d1d2cf','#d1d2cf']};
-const defaults=()=>({pattern:'Concrete',base:'#c3c6c3',detail:'#858a88',spacing:24,line:2,repeat:2,angle:0,roughness:.82,metalness:0,bump:.12});
-let settings=defaults(),customURI=null,customName='';
-const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
-const ctx=canvas.getContext('2d');
-function renderPattern(){const c=ctx,n=512,s=Math.max(8,Math.min(128,+settings.spacing||24));c.clearRect(0,0,n,n);c.fillStyle=settings.base;c.fillRect(0,0,n,n);c.strokeStyle=settings.detail;c.fillStyle=settings.detail;c.lineWidth=Math.max(.5,+settings.line||1);const name=settings.pattern;
-if(name==='Solid')return;
-if(name==='Concrete'){for(let y=0;y<n;y+=4)for(let x=0;x<n;x+=4){const q=(Math.sin(x*112.13+y*92.73)*43758.5453)%1;c.globalAlpha=.035+Math.abs(q)*.13;c.fillRect(x,y,2,2)}c.globalAlpha=1;return;}
-if(name==='Brick'){const h=s,w=s*2;for(let y=0,r=0;y<n+h;y+=h,r++){c.beginPath();c.moveTo(0,y);c.lineTo(n,y);c.stroke();for(let x=(r%2)*w/2;x<n+w;x+=w){c.beginPath();c.moveTo(x,y);c.lineTo(x,y+h);c.stroke()}}return;}
-if(name==='Timber'){for(let y=0;y<n;y+=s){c.beginPath();for(let x=0;x<=n;x+=5){const yy=y+Math.sin(x*.033+y)*2+Math.sin(x*.08+y*.13)*1.2;x?c.lineTo(x,yy):c.moveTo(x,yy)}c.stroke()}return;}
-if(name==='Stone'){for(let y=0;y<n+s;y+=s){c.beginPath();c.moveTo(0,y);c.lineTo(n,y);c.stroke();for(let x=(Math.floor(y/s)%3)*s/2;x<n+s*2;x+=s*2){c.beginPath();c.moveTo(x,y);c.lineTo(x+Math.sin(x+y)*s*.12,y+s);c.stroke()}}return;}
-if(name==='Ceramic'||name==='Grid'){for(let q=0;q<=n;q+=s){c.beginPath();c.moveTo(q,0);c.lineTo(q,n);c.moveTo(0,q);c.lineTo(n,q);c.stroke()}return;}
-if(name==='Terrazzo'){for(let k=0;k<1200;k++){let x=(k*73.733)%512,y=(k*194.31)%512,r=1+(k%9)*.45;c.beginPath();c.moveTo(x-r,y);c.lineTo(x+r,y-2);c.lineTo(x+r*.5,y+r);c.fill()}return;}
-if(name==='Metal'){for(let y=0;y<n;y+=3){c.globalAlpha=.05+((y*13)%7)*.01;c.fillRect(0,y,n,1)}c.globalAlpha=1;return;}
-if(name==='Hatch 45°'||name==='Crosshatch'){for(const direction of name==='Crosshatch'?[1,-1]:[1])for(let x=-n;x<n*2;x+=s){c.beginPath();c.moveTo(x,0);c.lineTo(x+direction*n,n);c.stroke()}return;}
-if(name==='Dots'){for(let y=s/2;y<n;y+=s)for(let x=s/2;x<n;x+=s){c.beginPath();c.arc(x,y,Math.max(1,+settings.line*1.5),0,Math.PI*2);c.fill()}}}
-function getMesh(){const m=A.selected;if(!m){A.say?.('Select an architectural mesh before applying a material');return null}if(!m.isMesh){let child=null;m.traverse?.(o=>{if(!child&&o.isMesh)child=o});if(!child){A.say?.('Selected group contains no editable mesh');return null}return child}return m}
-function applyTexture(tex,kind='procedural'){
-const obj=getMesh();if(!obj)return;
-// Distinct material instance so neighbouring meshes remain unchanged.
-let m=Array.isArray(obj.material)?obj.material[0]:obj.material;
-if(!m)return;
-const mat=m.clone();if(mat.map&&mat.map!==tex){};
-tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.repeat.set(settings.repeat,settings.repeat);tex.rotation=+settings.angle*Math.PI/180;tex.center.set(.5,.5);tex.needsUpdate=true;
-mat.map=tex;mat.color.set('#ffffff');mat.roughness=+settings.roughness;mat.metalness=+settings.metalness;
-if('bumpScale'in mat){mat.bumpMap=kind==='procedural'?tex:null;mat.bumpScale=kind==='procedural'?settings.bump:0}
-mat.needsUpdate=true;
-if(Array.isArray(obj.material)){obj.material=obj.material.map((v,i)=>i===0?mat:v)}else obj.material=mat;
-obj.userData.siMaterialDesign={...settings,source:kind,name:kind==='custom'?customName:settings.pattern};
-A.commit?.('Architectural material '+(kind==='custom'?customName:settings.pattern));A.say?.('Applied '+(kind==='custom'?customName:settings.pattern)+' to '+(obj.name||'selected object'));
-}
-function apply(){renderPattern();const tex=new T.CanvasTexture(canvas);tex.name='Surreal procedural: '+settings.pattern;applyTexture(tex)}
-function applyCustom(){if(!customURI)return A.say?.('Select a texture image first');new T.TextureLoader().load(customURI,tex=>{tex.name=customName;tex.userData.sourceURI=customURI;applyTexture(tex,'custom')},undefined,()=>A.say?.('Could not decode texture image'))}
-const css=document.createElement('style');css.textContent=`#siMaterialStudio{border:1px solid var(--ln);background:var(--p, var(--wh));border-radius:8px;padding:12px;margin:9px 0;color:var(--tx);font-size:13px}#siMaterialStudio h3{font-size:14px;margin:0 0 8px}#siMaterialStudio .si-mrow{display:grid;grid-template-columns:98px minmax(0,1fr);align-items:center;gap:8px;margin:8px 0}#siMaterialStudio label{color:var(--tx);font-size:12px;font-weight:600}#siMaterialStudio input,#siMaterialStudio select{width:100%;min-width:0;min-height:32px;font-size:13px}#siMaterialStudio .si-material-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}#siMaterialStudio button{min-height:34px;font-size:12px;white-space:normal;color:var(--tx);background:var(--wh)}#siMaterialStudio button.si-primary{background:#254d60;color:white;border-color:#254d60;font-weight:700}#siMaterialStudio canvas{height:96px;width:100%;object-fit:cover;border:1px solid var(--ln);border-radius:5px}#siMaterialStudio .si-small{font-size:11px;color:var(--mu);line-height:1.5}`;document.head.append(css);
-const host=document.createElement('div');host.id='siMaterialStudio';host.innerHTML=`<h3>Architectural Texture Studio</h3><canvas id="siMatPreview" width="512" height="512" aria-label="Procedural texture preview"></canvas><div class="si-mrow"><label for="siPattern">Pattern</label><select id="siPattern"></select></div><div class="si-mrow"><label for="siBase">Base colour</label><input id="siBase" type="color"></div><div class="si-mrow"><label for="siDetail">Hatch colour</label><input id="siDetail" type="color"></div><div class="si-mrow"><label for="siSpacing">Spacing (px)</label><input id="siSpacing" type="number" min="8" max="128"></div><div class="si-mrow"><label for="siLine">Line width</label><input id="siLine" type="number" min="0.5" max="12" step="0.5"></div><div class="si-mrow"><label for="siRepeat">UV tiling</label><input id="siRepeat" type="number" min="0.1" max="50" step="0.1"></div><div class="si-mrow"><label for="siAngle">Rotation °</label><input id="siAngle" type="number" min="-360" max="360" step="5"></div><div class="si-mrow"><label for="siRough">Roughness</label><input id="siRough" type="range" min="0" max="1" step="0.01"></div><div class="si-mrow"><label for="siMetal">Metallic</label><input id="siMetal" type="range" min="0" max="1" step="0.01"></div><div class="si-mrow"><label for="siBump">Relief</label><input id="siBump" type="range" min="0" max="0.5" step="0.01"></div><div class="si-material-actions"><button id="siMatApply" class="si-primary">Apply to selection</button><button id="siMatClear">Remove texture</button></div><div class="si-mrow"><label for="siCustomFile">Import image</label><input id="siCustomFile" type="file" accept="image/png,image/jpeg,image/webp,image/bmp"></div><button id="siCustomApply" class="si-primary" style="width:100%">Apply imported image</button><p class="si-small">Procedural colour hatches and image textures are mapped to selected geometry. They are appearance effects, not physically modeled joints. UV repeat uses existing mesh UV coordinates. Textures are embedded in .surreal asset saves when image data can be accessed.</p>`;
-const $=s=>host.querySelector(s);patterns.forEach(n=>{$('#siPattern').add(new Option(n,n))});
-const inputs=[['pattern','#siPattern'],['base','#siBase'],['detail','#siDetail'],['spacing','#siSpacing'],['line','#siLine'],['repeat','#siRepeat'],['angle','#siAngle'],['roughness','#siRough'],['metalness','#siMetal'],['bump','#siBump']];
-function reflect(){for(const [key,id]of inputs)$(id).value=settings[key];renderPattern();const p=$('#siMatPreview');p.getContext('2d').clearRect(0,0,512,512);p.getContext('2d').drawImage(canvas,0,0)}
-for(const[key,id]of inputs){$(id).addEventListener('input',()=>{settings[key]=['pattern','base','detail'].includes(key)?$(id).value:Number($(id).value);if(key==='pattern'){const v=presets[settings.pattern];settings.base=v[0];settings.detail=v[1]}reflect()})}
-$('#siMatApply').onclick=apply;
-$('#siMatClear').onclick=()=>{const o=getMesh();if(!o)return;const mats=Array.isArray(o.material)?o.material:[o.material];for(let i=0;i<mats.length;i++){const m=mats[i].clone();m.map=null;m.bumpMap=null;m.color.set('#ffffff');m.needsUpdate=true;if(Array.isArray(o.material))o.material[i]=m;else o.material=m}A.commit?.('Remove texture');A.say?.('Material texture removed')};
-$('#siCustomFile').onchange=()=>{const file=$('#siCustomFile').files?.[0];if(!file)return;if(file.size>24*1024*1024)return A.say?.('Texture exceeds 24 MB input limit');customName=file.name;const reader=new FileReader();reader.onload=()=>{customURI=reader.result;A.say?.('Imported texture: '+file.name)};reader.readAsDataURL(file)};
-$('#siCustomApply').onclick=applyCustom;
-// Attach after Material tab is rebuilt by core renderer, no modification of core UI internals.
-let queued=false;const observer=new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;const root=document.getElementById('tab');if(!root||host.parentElement===root)return;const active=document.querySelector('.tabs [data-t="mat"].on');if(active)root.append(host)})});const tab=document.getElementById('tab');if(tab)observer.observe(tab,{childList:true});
-reflect();window.SI_PROCEDURAL_MATERIALS={patterns,settings,apply,applyCustom};
-})();
-
-</script>
-</body>');download(filename()+'_Client.html',new Blob([out],{type:'text/html'}));A.say('Standalone interactive client HTML exported')}catch(err){A.say('Client export failed '+err.message)}};
+$('#clientExport').onclick=()=>{try{
+  const payload=JSON.stringify({format:'SURREAL',version:4,scene:JSON.parse(A.ser())});
+  const restore='window.addEventListener("load",function(){try{const p='+JSON.stringify(payload)+';const d=JSON.parse(p);if(window.SI&&SI.des)SI.des(JSON.stringify(d.scene));document.body.classList.add("presentation");const bar=document.getElementById("clientBar");if(bar)bar.style.display="flex";}catch(e){console.error("Client restore",e)}});';
+  const boot='<scr'+'ipt>'+restore+'</scr'+'ipt>';
+  const source=document.documentElement.outerHTML;
+  const out='<!DOCTYPE html>\n'+source.replace('</body>',boot+'</body>');
+  download(filename()+'_Client.html',new Blob([out],{type:'text/html'}));A.say('Client HTML exported');
+}catch(err){A.say('Client export failed: '+err.message)}};
 // Keep timeline synchronized after edit and loading
 let prev='';setInterval(()=>{const now=A.cams.map(c=>c.n+':'+c.d).join('|')+'|'+A.objs.length;if(now!==prev){prev=now;renderShots()}},700);
 renderShots();if(location.search.includes('present=1')){document.body.classList.add('presentation');showShot()}
@@ -959,115 +862,14 @@ const existingCommit=A.commit.bind(A);A.commit=function(label){readClips();exist
 const filename=()=>((document.querySelector('#title')?.value||'Surreal_Project').replace(/[^\w-]+/g,'_'));
 function download(name,text,mime){const blob=new Blob([text],{type:mime});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),20000)}
 const native=document.querySelector('#nativeSave');if(native)native.addEventListener('click',e=>{e.stopImmediatePropagation();readClips();download(filename()+'.surreal',JSON.stringify({format:'SURREAL',version:4,scene:JSON.parse(A.ser())},null,2),'application/json')},true);
-const client=document.querySelector('#clientExport');if(client)client.addEventListener('click',e=>{e.stopImmediatePropagation();readClips();const data=A.ser().replace(/</g,'\\u003c');const source=document.documentElement.outerHTML;const boot='<script>window.addEventListener("load",function(){try{SI.des('+JSON.stringify(data)+');document.body.classList.add("presentation");const bar=document.getElementById("clientBar");if(bar)bar.style.display="flex";}catch(e){console.error("Client load",e)}});<\\/script>'.replace('<\\/script>','</'+'script>');download(filename()+'_Client.html','<!DOCTYPE html>\n'+source.replace('<script>
-(()=>{'use strict';
-const A=window.SI,T=A?.THREE;
-if(!A||!T)return;
-const patterns=['Concrete','Brick','Timber','Stone','Ceramic','Terrazzo','Metal','Hatch 45°','Crosshatch','Grid','Dots','Solid'];
-const presets={Concrete:['#c3c6c3','#858a88'],Brick:['#b57765','#e2d4c8'],Timber:['#b99162','#6f543a'],Stone:['#b7b1a5','#827d77'],Ceramic:['#dddcd3','#8c8e88'],Terrazzo:['#d7d4cd','#8e918b'],Metal:['#a4afb5','#62727c'],'Hatch 45°':['#f2f2ef','#5f6d73'],Crosshatch:['#f4f5f3','#576875'],Grid:['#f6f6f2','#7d878a'],Dots:['#f6f6f4','#6f7778'],Solid:['#d1d2cf','#d1d2cf']};
-const defaults=()=>({pattern:'Concrete',base:'#c3c6c3',detail:'#858a88',spacing:24,line:2,repeat:2,angle:0,roughness:.82,metalness:0,bump:.12});
-let settings=defaults(),customURI=null,customName='';
-const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
-const ctx=canvas.getContext('2d');
-function renderPattern(){const c=ctx,n=512,s=Math.max(8,Math.min(128,+settings.spacing||24));c.clearRect(0,0,n,n);c.fillStyle=settings.base;c.fillRect(0,0,n,n);c.strokeStyle=settings.detail;c.fillStyle=settings.detail;c.lineWidth=Math.max(.5,+settings.line||1);const name=settings.pattern;
-if(name==='Solid')return;
-if(name==='Concrete'){for(let y=0;y<n;y+=4)for(let x=0;x<n;x+=4){const q=(Math.sin(x*112.13+y*92.73)*43758.5453)%1;c.globalAlpha=.035+Math.abs(q)*.13;c.fillRect(x,y,2,2)}c.globalAlpha=1;return;}
-if(name==='Brick'){const h=s,w=s*2;for(let y=0,r=0;y<n+h;y+=h,r++){c.beginPath();c.moveTo(0,y);c.lineTo(n,y);c.stroke();for(let x=(r%2)*w/2;x<n+w;x+=w){c.beginPath();c.moveTo(x,y);c.lineTo(x,y+h);c.stroke()}}return;}
-if(name==='Timber'){for(let y=0;y<n;y+=s){c.beginPath();for(let x=0;x<=n;x+=5){const yy=y+Math.sin(x*.033+y)*2+Math.sin(x*.08+y*.13)*1.2;x?c.lineTo(x,yy):c.moveTo(x,yy)}c.stroke()}return;}
-if(name==='Stone'){for(let y=0;y<n+s;y+=s){c.beginPath();c.moveTo(0,y);c.lineTo(n,y);c.stroke();for(let x=(Math.floor(y/s)%3)*s/2;x<n+s*2;x+=s*2){c.beginPath();c.moveTo(x,y);c.lineTo(x+Math.sin(x+y)*s*.12,y+s);c.stroke()}}return;}
-if(name==='Ceramic'||name==='Grid'){for(let q=0;q<=n;q+=s){c.beginPath();c.moveTo(q,0);c.lineTo(q,n);c.moveTo(0,q);c.lineTo(n,q);c.stroke()}return;}
-if(name==='Terrazzo'){for(let k=0;k<1200;k++){let x=(k*73.733)%512,y=(k*194.31)%512,r=1+(k%9)*.45;c.beginPath();c.moveTo(x-r,y);c.lineTo(x+r,y-2);c.lineTo(x+r*.5,y+r);c.fill()}return;}
-if(name==='Metal'){for(let y=0;y<n;y+=3){c.globalAlpha=.05+((y*13)%7)*.01;c.fillRect(0,y,n,1)}c.globalAlpha=1;return;}
-if(name==='Hatch 45°'||name==='Crosshatch'){for(const direction of name==='Crosshatch'?[1,-1]:[1])for(let x=-n;x<n*2;x+=s){c.beginPath();c.moveTo(x,0);c.lineTo(x+direction*n,n);c.stroke()}return;}
-if(name==='Dots'){for(let y=s/2;y<n;y+=s)for(let x=s/2;x<n;x+=s){c.beginPath();c.arc(x,y,Math.max(1,+settings.line*1.5),0,Math.PI*2);c.fill()}}}
-function getMesh(){const m=A.selected;if(!m){A.say?.('Select an architectural mesh before applying a material');return null}if(!m.isMesh){let child=null;m.traverse?.(o=>{if(!child&&o.isMesh)child=o});if(!child){A.say?.('Selected group contains no editable mesh');return null}return child}return m}
-function applyTexture(tex,kind='procedural'){
-const obj=getMesh();if(!obj)return;
-// Distinct material instance so neighbouring meshes remain unchanged.
-let m=Array.isArray(obj.material)?obj.material[0]:obj.material;
-if(!m)return;
-const mat=m.clone();if(mat.map&&mat.map!==tex){};
-tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.repeat.set(settings.repeat,settings.repeat);tex.rotation=+settings.angle*Math.PI/180;tex.center.set(.5,.5);tex.needsUpdate=true;
-mat.map=tex;mat.color.set('#ffffff');mat.roughness=+settings.roughness;mat.metalness=+settings.metalness;
-if('bumpScale'in mat){mat.bumpMap=kind==='procedural'?tex:null;mat.bumpScale=kind==='procedural'?settings.bump:0}
-mat.needsUpdate=true;
-if(Array.isArray(obj.material)){obj.material=obj.material.map((v,i)=>i===0?mat:v)}else obj.material=mat;
-obj.userData.siMaterialDesign={...settings,source:kind,name:kind==='custom'?customName:settings.pattern};
-A.commit?.('Architectural material '+(kind==='custom'?customName:settings.pattern));A.say?.('Applied '+(kind==='custom'?customName:settings.pattern)+' to '+(obj.name||'selected object'));
-}
-function apply(){renderPattern();const tex=new T.CanvasTexture(canvas);tex.name='Surreal procedural: '+settings.pattern;applyTexture(tex)}
-function applyCustom(){if(!customURI)return A.say?.('Select a texture image first');new T.TextureLoader().load(customURI,tex=>{tex.name=customName;tex.userData.sourceURI=customURI;applyTexture(tex,'custom')},undefined,()=>A.say?.('Could not decode texture image'))}
-const css=document.createElement('style');css.textContent=`#siMaterialStudio{border:1px solid var(--ln);background:var(--p, var(--wh));border-radius:8px;padding:12px;margin:9px 0;color:var(--tx);font-size:13px}#siMaterialStudio h3{font-size:14px;margin:0 0 8px}#siMaterialStudio .si-mrow{display:grid;grid-template-columns:98px minmax(0,1fr);align-items:center;gap:8px;margin:8px 0}#siMaterialStudio label{color:var(--tx);font-size:12px;font-weight:600}#siMaterialStudio input,#siMaterialStudio select{width:100%;min-width:0;min-height:32px;font-size:13px}#siMaterialStudio .si-material-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}#siMaterialStudio button{min-height:34px;font-size:12px;white-space:normal;color:var(--tx);background:var(--wh)}#siMaterialStudio button.si-primary{background:#254d60;color:white;border-color:#254d60;font-weight:700}#siMaterialStudio canvas{height:96px;width:100%;object-fit:cover;border:1px solid var(--ln);border-radius:5px}#siMaterialStudio .si-small{font-size:11px;color:var(--mu);line-height:1.5}`;document.head.append(css);
-const host=document.createElement('div');host.id='siMaterialStudio';host.innerHTML=`<h3>Architectural Texture Studio</h3><canvas id="siMatPreview" width="512" height="512" aria-label="Procedural texture preview"></canvas><div class="si-mrow"><label for="siPattern">Pattern</label><select id="siPattern"></select></div><div class="si-mrow"><label for="siBase">Base colour</label><input id="siBase" type="color"></div><div class="si-mrow"><label for="siDetail">Hatch colour</label><input id="siDetail" type="color"></div><div class="si-mrow"><label for="siSpacing">Spacing (px)</label><input id="siSpacing" type="number" min="8" max="128"></div><div class="si-mrow"><label for="siLine">Line width</label><input id="siLine" type="number" min="0.5" max="12" step="0.5"></div><div class="si-mrow"><label for="siRepeat">UV tiling</label><input id="siRepeat" type="number" min="0.1" max="50" step="0.1"></div><div class="si-mrow"><label for="siAngle">Rotation °</label><input id="siAngle" type="number" min="-360" max="360" step="5"></div><div class="si-mrow"><label for="siRough">Roughness</label><input id="siRough" type="range" min="0" max="1" step="0.01"></div><div class="si-mrow"><label for="siMetal">Metallic</label><input id="siMetal" type="range" min="0" max="1" step="0.01"></div><div class="si-mrow"><label for="siBump">Relief</label><input id="siBump" type="range" min="0" max="0.5" step="0.01"></div><div class="si-material-actions"><button id="siMatApply" class="si-primary">Apply to selection</button><button id="siMatClear">Remove texture</button></div><div class="si-mrow"><label for="siCustomFile">Import image</label><input id="siCustomFile" type="file" accept="image/png,image/jpeg,image/webp,image/bmp"></div><button id="siCustomApply" class="si-primary" style="width:100%">Apply imported image</button><p class="si-small">Procedural colour hatches and image textures are mapped to selected geometry. They are appearance effects, not physically modeled joints. UV repeat uses existing mesh UV coordinates. Textures are embedded in .surreal asset saves when image data can be accessed.</p>`;
-const $=s=>host.querySelector(s);patterns.forEach(n=>{$('#siPattern').add(new Option(n,n))});
-const inputs=[['pattern','#siPattern'],['base','#siBase'],['detail','#siDetail'],['spacing','#siSpacing'],['line','#siLine'],['repeat','#siRepeat'],['angle','#siAngle'],['roughness','#siRough'],['metalness','#siMetal'],['bump','#siBump']];
-function reflect(){for(const [key,id]of inputs)$(id).value=settings[key];renderPattern();const p=$('#siMatPreview');p.getContext('2d').clearRect(0,0,512,512);p.getContext('2d').drawImage(canvas,0,0)}
-for(const[key,id]of inputs){$(id).addEventListener('input',()=>{settings[key]=['pattern','base','detail'].includes(key)?$(id).value:Number($(id).value);if(key==='pattern'){const v=presets[settings.pattern];settings.base=v[0];settings.detail=v[1]}reflect()})}
-$('#siMatApply').onclick=apply;
-$('#siMatClear').onclick=()=>{const o=getMesh();if(!o)return;const mats=Array.isArray(o.material)?o.material:[o.material];for(let i=0;i<mats.length;i++){const m=mats[i].clone();m.map=null;m.bumpMap=null;m.color.set('#ffffff');m.needsUpdate=true;if(Array.isArray(o.material))o.material[i]=m;else o.material=m}A.commit?.('Remove texture');A.say?.('Material texture removed')};
-$('#siCustomFile').onchange=()=>{const file=$('#siCustomFile').files?.[0];if(!file)return;if(file.size>24*1024*1024)return A.say?.('Texture exceeds 24 MB input limit');customName=file.name;const reader=new FileReader();reader.onload=()=>{customURI=reader.result;A.say?.('Imported texture: '+file.name)};reader.readAsDataURL(file)};
-$('#siCustomApply').onclick=applyCustom;
-// Attach after Material tab is rebuilt by core renderer, no modification of core UI internals.
-let queued=false;const observer=new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;const root=document.getElementById('tab');if(!root||host.parentElement===root)return;const active=document.querySelector('.tabs [data-t="mat"].on');if(active)root.append(host)})});const tab=document.getElementById('tab');if(tab)observer.observe(tab,{childList:true});
-reflect();window.SI_PROCEDURAL_MATERIALS={patterns,settings,apply,applyCustom};
-})();
-
-</script>
-</body>',boot+'<script>
-(()=>{'use strict';
-const A=window.SI,T=A?.THREE;
-if(!A||!T)return;
-const patterns=['Concrete','Brick','Timber','Stone','Ceramic','Terrazzo','Metal','Hatch 45°','Crosshatch','Grid','Dots','Solid'];
-const presets={Concrete:['#c3c6c3','#858a88'],Brick:['#b57765','#e2d4c8'],Timber:['#b99162','#6f543a'],Stone:['#b7b1a5','#827d77'],Ceramic:['#dddcd3','#8c8e88'],Terrazzo:['#d7d4cd','#8e918b'],Metal:['#a4afb5','#62727c'],'Hatch 45°':['#f2f2ef','#5f6d73'],Crosshatch:['#f4f5f3','#576875'],Grid:['#f6f6f2','#7d878a'],Dots:['#f6f6f4','#6f7778'],Solid:['#d1d2cf','#d1d2cf']};
-const defaults=()=>({pattern:'Concrete',base:'#c3c6c3',detail:'#858a88',spacing:24,line:2,repeat:2,angle:0,roughness:.82,metalness:0,bump:.12});
-let settings=defaults(),customURI=null,customName='';
-const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
-const ctx=canvas.getContext('2d');
-function renderPattern(){const c=ctx,n=512,s=Math.max(8,Math.min(128,+settings.spacing||24));c.clearRect(0,0,n,n);c.fillStyle=settings.base;c.fillRect(0,0,n,n);c.strokeStyle=settings.detail;c.fillStyle=settings.detail;c.lineWidth=Math.max(.5,+settings.line||1);const name=settings.pattern;
-if(name==='Solid')return;
-if(name==='Concrete'){for(let y=0;y<n;y+=4)for(let x=0;x<n;x+=4){const q=(Math.sin(x*112.13+y*92.73)*43758.5453)%1;c.globalAlpha=.035+Math.abs(q)*.13;c.fillRect(x,y,2,2)}c.globalAlpha=1;return;}
-if(name==='Brick'){const h=s,w=s*2;for(let y=0,r=0;y<n+h;y+=h,r++){c.beginPath();c.moveTo(0,y);c.lineTo(n,y);c.stroke();for(let x=(r%2)*w/2;x<n+w;x+=w){c.beginPath();c.moveTo(x,y);c.lineTo(x,y+h);c.stroke()}}return;}
-if(name==='Timber'){for(let y=0;y<n;y+=s){c.beginPath();for(let x=0;x<=n;x+=5){const yy=y+Math.sin(x*.033+y)*2+Math.sin(x*.08+y*.13)*1.2;x?c.lineTo(x,yy):c.moveTo(x,yy)}c.stroke()}return;}
-if(name==='Stone'){for(let y=0;y<n+s;y+=s){c.beginPath();c.moveTo(0,y);c.lineTo(n,y);c.stroke();for(let x=(Math.floor(y/s)%3)*s/2;x<n+s*2;x+=s*2){c.beginPath();c.moveTo(x,y);c.lineTo(x+Math.sin(x+y)*s*.12,y+s);c.stroke()}}return;}
-if(name==='Ceramic'||name==='Grid'){for(let q=0;q<=n;q+=s){c.beginPath();c.moveTo(q,0);c.lineTo(q,n);c.moveTo(0,q);c.lineTo(n,q);c.stroke()}return;}
-if(name==='Terrazzo'){for(let k=0;k<1200;k++){let x=(k*73.733)%512,y=(k*194.31)%512,r=1+(k%9)*.45;c.beginPath();c.moveTo(x-r,y);c.lineTo(x+r,y-2);c.lineTo(x+r*.5,y+r);c.fill()}return;}
-if(name==='Metal'){for(let y=0;y<n;y+=3){c.globalAlpha=.05+((y*13)%7)*.01;c.fillRect(0,y,n,1)}c.globalAlpha=1;return;}
-if(name==='Hatch 45°'||name==='Crosshatch'){for(const direction of name==='Crosshatch'?[1,-1]:[1])for(let x=-n;x<n*2;x+=s){c.beginPath();c.moveTo(x,0);c.lineTo(x+direction*n,n);c.stroke()}return;}
-if(name==='Dots'){for(let y=s/2;y<n;y+=s)for(let x=s/2;x<n;x+=s){c.beginPath();c.arc(x,y,Math.max(1,+settings.line*1.5),0,Math.PI*2);c.fill()}}}
-function getMesh(){const m=A.selected;if(!m){A.say?.('Select an architectural mesh before applying a material');return null}if(!m.isMesh){let child=null;m.traverse?.(o=>{if(!child&&o.isMesh)child=o});if(!child){A.say?.('Selected group contains no editable mesh');return null}return child}return m}
-function applyTexture(tex,kind='procedural'){
-const obj=getMesh();if(!obj)return;
-// Distinct material instance so neighbouring meshes remain unchanged.
-let m=Array.isArray(obj.material)?obj.material[0]:obj.material;
-if(!m)return;
-const mat=m.clone();if(mat.map&&mat.map!==tex){};
-tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.repeat.set(settings.repeat,settings.repeat);tex.rotation=+settings.angle*Math.PI/180;tex.center.set(.5,.5);tex.needsUpdate=true;
-mat.map=tex;mat.color.set('#ffffff');mat.roughness=+settings.roughness;mat.metalness=+settings.metalness;
-if('bumpScale'in mat){mat.bumpMap=kind==='procedural'?tex:null;mat.bumpScale=kind==='procedural'?settings.bump:0}
-mat.needsUpdate=true;
-if(Array.isArray(obj.material)){obj.material=obj.material.map((v,i)=>i===0?mat:v)}else obj.material=mat;
-obj.userData.siMaterialDesign={...settings,source:kind,name:kind==='custom'?customName:settings.pattern};
-A.commit?.('Architectural material '+(kind==='custom'?customName:settings.pattern));A.say?.('Applied '+(kind==='custom'?customName:settings.pattern)+' to '+(obj.name||'selected object'));
-}
-function apply(){renderPattern();const tex=new T.CanvasTexture(canvas);tex.name='Surreal procedural: '+settings.pattern;applyTexture(tex)}
-function applyCustom(){if(!customURI)return A.say?.('Select a texture image first');new T.TextureLoader().load(customURI,tex=>{tex.name=customName;tex.userData.sourceURI=customURI;applyTexture(tex,'custom')},undefined,()=>A.say?.('Could not decode texture image'))}
-const css=document.createElement('style');css.textContent=`#siMaterialStudio{border:1px solid var(--ln);background:var(--p, var(--wh));border-radius:8px;padding:12px;margin:9px 0;color:var(--tx);font-size:13px}#siMaterialStudio h3{font-size:14px;margin:0 0 8px}#siMaterialStudio .si-mrow{display:grid;grid-template-columns:98px minmax(0,1fr);align-items:center;gap:8px;margin:8px 0}#siMaterialStudio label{color:var(--tx);font-size:12px;font-weight:600}#siMaterialStudio input,#siMaterialStudio select{width:100%;min-width:0;min-height:32px;font-size:13px}#siMaterialStudio .si-material-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}#siMaterialStudio button{min-height:34px;font-size:12px;white-space:normal;color:var(--tx);background:var(--wh)}#siMaterialStudio button.si-primary{background:#254d60;color:white;border-color:#254d60;font-weight:700}#siMaterialStudio canvas{height:96px;width:100%;object-fit:cover;border:1px solid var(--ln);border-radius:5px}#siMaterialStudio .si-small{font-size:11px;color:var(--mu);line-height:1.5}`;document.head.append(css);
-const host=document.createElement('div');host.id='siMaterialStudio';host.innerHTML=`<h3>Architectural Texture Studio</h3><canvas id="siMatPreview" width="512" height="512" aria-label="Procedural texture preview"></canvas><div class="si-mrow"><label for="siPattern">Pattern</label><select id="siPattern"></select></div><div class="si-mrow"><label for="siBase">Base colour</label><input id="siBase" type="color"></div><div class="si-mrow"><label for="siDetail">Hatch colour</label><input id="siDetail" type="color"></div><div class="si-mrow"><label for="siSpacing">Spacing (px)</label><input id="siSpacing" type="number" min="8" max="128"></div><div class="si-mrow"><label for="siLine">Line width</label><input id="siLine" type="number" min="0.5" max="12" step="0.5"></div><div class="si-mrow"><label for="siRepeat">UV tiling</label><input id="siRepeat" type="number" min="0.1" max="50" step="0.1"></div><div class="si-mrow"><label for="siAngle">Rotation °</label><input id="siAngle" type="number" min="-360" max="360" step="5"></div><div class="si-mrow"><label for="siRough">Roughness</label><input id="siRough" type="range" min="0" max="1" step="0.01"></div><div class="si-mrow"><label for="siMetal">Metallic</label><input id="siMetal" type="range" min="0" max="1" step="0.01"></div><div class="si-mrow"><label for="siBump">Relief</label><input id="siBump" type="range" min="0" max="0.5" step="0.01"></div><div class="si-material-actions"><button id="siMatApply" class="si-primary">Apply to selection</button><button id="siMatClear">Remove texture</button></div><div class="si-mrow"><label for="siCustomFile">Import image</label><input id="siCustomFile" type="file" accept="image/png,image/jpeg,image/webp,image/bmp"></div><button id="siCustomApply" class="si-primary" style="width:100%">Apply imported image</button><p class="si-small">Procedural colour hatches and image textures are mapped to selected geometry. They are appearance effects, not physically modeled joints. UV repeat uses existing mesh UV coordinates. Textures are embedded in .surreal asset saves when image data can be accessed.</p>`;
-const $=s=>host.querySelector(s);patterns.forEach(n=>{$('#siPattern').add(new Option(n,n))});
-const inputs=[['pattern','#siPattern'],['base','#siBase'],['detail','#siDetail'],['spacing','#siSpacing'],['line','#siLine'],['repeat','#siRepeat'],['angle','#siAngle'],['roughness','#siRough'],['metalness','#siMetal'],['bump','#siBump']];
-function reflect(){for(const [key,id]of inputs)$(id).value=settings[key];renderPattern();const p=$('#siMatPreview');p.getContext('2d').clearRect(0,0,512,512);p.getContext('2d').drawImage(canvas,0,0)}
-for(const[key,id]of inputs){$(id).addEventListener('input',()=>{settings[key]=['pattern','base','detail'].includes(key)?$(id).value:Number($(id).value);if(key==='pattern'){const v=presets[settings.pattern];settings.base=v[0];settings.detail=v[1]}reflect()})}
-$('#siMatApply').onclick=apply;
-$('#siMatClear').onclick=()=>{const o=getMesh();if(!o)return;const mats=Array.isArray(o.material)?o.material:[o.material];for(let i=0;i<mats.length;i++){const m=mats[i].clone();m.map=null;m.bumpMap=null;m.color.set('#ffffff');m.needsUpdate=true;if(Array.isArray(o.material))o.material[i]=m;else o.material=m}A.commit?.('Remove texture');A.say?.('Material texture removed')};
-$('#siCustomFile').onchange=()=>{const file=$('#siCustomFile').files?.[0];if(!file)return;if(file.size>24*1024*1024)return A.say?.('Texture exceeds 24 MB input limit');customName=file.name;const reader=new FileReader();reader.onload=()=>{customURI=reader.result;A.say?.('Imported texture: '+file.name)};reader.readAsDataURL(file)};
-$('#siCustomApply').onclick=applyCustom;
-// Attach after Material tab is rebuilt by core renderer, no modification of core UI internals.
-let queued=false;const observer=new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;const root=document.getElementById('tab');if(!root||host.parentElement===root)return;const active=document.querySelector('.tabs [data-t="mat"].on');if(active)root.append(host)})});const tab=document.getElementById('tab');if(tab)observer.observe(tab,{childList:true});
-reflect();window.SI_PROCEDURAL_MATERIALS={patterns,settings,apply,applyCustom};
-})();
-
-</script>
-</body>'),'text/html')},true);
+const client=document.querySelector('#clientExport');
+if(client)client.addEventListener('click',e=>{
+ e.stopImmediatePropagation();readClips();
+ const project=JSON.stringify({format:'SURREAL',version:4,scene:JSON.parse(A.ser())});
+ const restore='window.addEventListener("load",function(){try{const d=JSON.parse('+JSON.stringify(project)+');SI.des(JSON.stringify(d.scene));document.body.classList.add("presentation");const b=document.getElementById("clientBar");if(b)b.style.display="flex";}catch(e){console.error(e)}});';
+ const boot='<scr'+'ipt>'+restore+'</scr'+'ipt>';
+ download(filename()+'_Client.html','<!DOCTYPE html>\n'+document.documentElement.outerHTML.replace('</body>',boot+'</body>'),'text/html');
+},true);
 const strip=document.querySelector('#siImportStrip');if(strip){const details=document.createElement('button');details.textContent='Asset audit';details.title='Inspect imported materials, textures, hierarchy and animations';details.onclick=()=>{readClips();const x=registry.inspect();A.say(`${x.meshes} meshes · ${x.textures} texture maps · ${x.animations} animation clips · ${x.missing.length} missing textures`);alert('Surreal Asset Manager v4\n\n'+JSON.stringify(x,null,2))};strip.insertBefore(details,strip.querySelector('#siImportStatus'));}
 // Animation preview shared by editor and published HTML.
 let mixer=null,activeAction=null,lastFrame=performance.now();
@@ -1456,3 +1258,4 @@ reflect();window.SI_PROCEDURAL_MATERIALS={patterns,settings,apply,applyCustom};
 
 </script>
 </body></html>
+
