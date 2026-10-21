@@ -2,7 +2,7 @@
 
 <html lang="en"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>Surreal Interactive | Vertascan — Studio QA Edition</title>
+<title>Surreal Interactive | Vertascan — Command Ribbon Edition</title>
 <link href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4Ij48cmVjdCB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgcng9IjI4IiBmaWxsPSIjMTUyYjM2Ii8+PHBhdGggZD0iTTE5IDMzaDQyIiBzdHJva2U9IiM2NGQ2YzgiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTEwOSA5NUg2NiIgc3Ryb2tlPSIjNjRkNmM4IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjx0ZXh0IHg9IjY0IiB5PSI4MyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjY1IiBmb250LXdlaWdodD0iNzAwIiBsZXR0ZXItc3BhY2luZz0iLTciIGZpbGw9IiNmZmYiPlNpPC90ZXh0PjxwYXRoIGQ9Ik0xOCAxMDQgMTEwIDIwIiBzdHJva2U9IiM2NGQ2YzgiIHN0cm9rZS13aWR0aD0iMiIgb3BhY2l0eT0iLjUiLz48L3N2Zz4=" rel="icon" type="image/svg+xml"/>
 <meta content="#152b36" name="theme-color"/>
 <meta content="Surreal Interactive | Vertascan" name="application-name"/>
@@ -232,6 +232,37 @@ button:focus-visible,.siFoldHead:focus-visible,summary:focus-visible{outline:2px
 #siGraphicsNotice strong{font-size:14px;letter-spacing:.09em}#siGraphicsNotice span{color:#375363}
 button:not(:disabled){cursor:pointer!important;opacity:1}button:focus-visible,summary:focus-visible,[role=button]:focus-visible{outline:2px solid #20617d!important;outline-offset:2px}
 #siViewTools,#siBottom,#siHeaderActions,.siFoldHead{pointer-events:auto}
+</style><style id="si-command-ribbon-final">
+/* Vertascan readable two-tier command layout: never horizontally scroll the top bars. */
+body>header{height:auto!important;min-height:70px!important;flex:0 0 auto!important;display:flex!important;flex-wrap:wrap!important;align-content:center!important;align-items:center!important;overflow:visible!important;padding:11px 17px!important;gap:10px 18px!important;position:relative!important;z-index:60!important;background:#fff!important}
+body>header .logo{margin-right:auto!important;flex:0 0 auto!important;max-width:100%!important}
+body>header #title{flex:0 1 210px!important;width:190px!important;max-width:220px!important;min-width:110px!important;height:38px!important;font-size:13px!important}
+#siHeaderActions{margin-left:0!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;flex:0 1 auto!important;max-width:100%!important;min-width:0!important}
+#siHeaderActions .siMenu{position:relative!important;flex:0 0 auto!important}
+#siHeaderActions .siMenuContent{z-index:500!important}
+#siQuick{display:flex!important;gap:7px!important;flex-wrap:wrap!important}
+#siQuick button, #siHeaderActions .siMenu summary{font-size:13px!important;min-height:38px!important;padding:8px 13px!important}
+#fps{font-size:12px!important;white-space:nowrap!important}
+#siCommandRibbon{display:flex;flex-wrap:wrap;align-items:stretch;gap:0 18px;padding:7px 14px;background:#f5f8f9;border-bottom:1px solid #cbd7dc;box-shadow:0 2px 5px #12303a0a;flex:0 0 auto;position:relative;z-index:24;max-width:100%;min-width:0;overflow:visible}
+#siCommandRibbon .siRibbonGroup{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:6px!important;min-height:42px!important;max-width:100%!important;padding:4px 10px 4px 0!important;margin:0!important;overflow:visible!important;white-space:normal!important;border-right:1px solid #d1dbde!important;background:transparent!important;flex:0 1 auto!important}
+#siCommandRibbon .siRibbonGroup:last-child{border-right:0!important}
+#siCommandRibbon button{flex:0 0 auto!important;min-height:34px!important;height:auto!important;max-width:100%!important;padding:7px 11px!important;font-size:12px!important;line-height:1.2!important;white-space:normal!important;border-radius:5px!important}
+#siCommandRibbon button:focus-visible{outline:2px solid #254d60!important;outline-offset:2px}
+#siProjectBar{width:auto!important;min-width:0!important;max-width:100%!important;order:1;}
+#siProjectBar .siGrow{display:none!important}
+#siProjectBar .siProjectName{max-width:170px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+#siProjectBar .siProjectState{max-width:135px!important;white-space:nowrap!important}
+#siImportStrip{width:auto!important;min-width:0!important;max-width:100%!important;order:2}
+#siImportStrip strong{color:#244657!important;font-size:11px!important}
+#siImportStrip #siImportStatus{display:none!important}
+#siViewTools{width:auto!important;min-width:0!important;max-width:100%!important;order:3;flex:1 1 370px!important}
+#siViewTools #hud{display:flex!important;align-items:center!important;flex-wrap:wrap!important;overflow:visible!important;min-width:0!important;max-width:100%!important;padding:0!important;gap:6px!important}
+#siViewTools .siMiniTitle{font-size:11px!important;padding:0 5px!important}
+#siWorkspaceActions{position:static!important;display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin-left:auto!important;padding-left:7px!important;background:transparent!important;z-index:auto!important}
+#siCommandRibbon input[type=file][hidden],#siCommandRibbon #siImportPicker{display:none!important}
+@media(max-width:1150px){body>header{padding:9px 12px!important;gap:7px 11px!important}#siCommandRibbon{gap:0 10px;padding:7px 10px}#siCommandRibbon .siRibbonGroup{border-right:0!important}#siViewTools{flex:1 1 100%!important}}
+@media(max-width:650px){body>header{min-height:64px!important;padding:8px 9px!important}body>header .brandWords small{font-size:8px!important}#siHeaderActions{width:100%!important;justify-content:flex-start!important}#siHeaderActions #fps{margin-left:auto!important}#siCommandRibbon{padding:5px 8px;gap:3px 0}#siCommandRibbon .siRibbonGroup{flex:1 1 100%!important;padding:5px 0!important;gap:5px!important;border-bottom:1px solid #dde5e8!important}#siCommandRibbon .siRibbonGroup:last-child{border-bottom:0!important}#siProjectBar .siProjectState{display:none!important}#siCommandRibbon button{min-height:33px!important;padding:7px 9px!important;font-size:12px!important}#siViewTools .siMiniTitle{display:none!important}#siWorkspaceActions{margin-left:0!important}}
+body.presentation #siCommandRibbon{display:none!important}
 </style></head><body>
 <header>
 <span class="logo"><span aria-hidden="true" class="brandMark">Si</span><span class="brandWords"><strong>Surreal Interactive</strong><small>VERTASCAN / VISUALIZATION STUDIO</small></span></span>
@@ -917,5 +948,25 @@ setClean(fingerprint(),'');window.SI_PROJECT_FILES={newProject,save,openFile,rec
    panel.innerHTML='<div><h2>3D graphics unavailable</h2><p>Surreal Interactive could not initialize the WebGL renderer. This is a browser or graphics-context limitation; your saved project file has not been changed.</p><p>Open the HTML in a current desktop Chrome or Edge browser with hardware acceleration enabled. If WebGL remains unavailable, check the graphics driver or browser GPU settings.</p></div>';vp.append(panel)}
  }
  sync();
+})();
+</script><script id="si-command-ribbon-layout">
+(function(){'use strict';
+ const init=()=>{
+  if(document.getElementById('siCommandRibbon'))return;
+  const header=document.querySelector('body > header');
+  const project=document.getElementById('siProjectBar');
+  const assets=document.getElementById('siImportStrip');
+  const views=document.getElementById('siViewTools');
+  if(!header||(!project&&!assets&&!views))return;
+  const ribbon=document.createElement('nav');ribbon.id='siCommandRibbon';ribbon.setAttribute('aria-label','Model and presentation tool ribbon');
+  header.insertAdjacentElement('afterend',ribbon);
+  for(const elem of [project,assets,views])if(elem){elem.classList.add('siRibbonGroup');ribbon.appendChild(elem)}
+  const menus=document.querySelectorAll('#siHeaderActions details.siMenu');
+  document.addEventListener('pointerdown',e=>{for(const m of menus)if(m.open&&!m.contains(e.target))m.open=false});
+  const resize=()=>window.dispatchEvent(new Event('resize'));
+  requestAnimationFrame(resize);
+  new ResizeObserver(()=>{if(!document.body.classList.contains('presentation'))resize()}).observe(ribbon);
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script></body></html>
