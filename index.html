@@ -1853,79 +1853,42 @@ function setBusy(on,msg){busy=on;for(const b of welcome.querySelectorAll('button
 document.getElementById('si-enter-studio').addEventListener('click',()=>{if(!busy)close()});
 document.getElementById('si-welcome-demo').addEventListener('click',async()=>{if(busy)return;const loader=window.SI_LOAD_COMMERCIAL_DEMO;if(typeof loader!=='function'){status.textContent='Demo loader is not ready. Enter Studio and use Load Commercial Demo.';return}setBusy(true,'Loading commercial building into the workspace…');try{await Promise.resolve(loader());if(!(window.SI?.objs?.length>0))throw new Error("No demo meshes were restored. See the status panel for details.");close();}catch(e){console.error('Welcome demo loading failed',e);setBusy(false,'Demo could not load: '+(e?.message||String(e)));}});
 document.getElementById('si-welcome-open').addEventListener('click',()=>{if(busy)return;close();const btn=document.getElementById('load')||document.querySelector('[data-action="open-project"]');if(btn)btn.click();else{const file=document.querySelector('input[type="file"][accept*="surreal"]');if(file)file.click();else window.alert('Use File → Open Project to select a .surreal file.')}});
-})();</script><script id="si-unified-drawing-history-v2">
+})();</script><script id="si-unified-drawing-history-v3">
 (()=>{'use strict';
-const A=window.SI;
-if(!A?.ser||!A?.des||!A?.commit)return;
-const undo=document.getElementById('undo'),redo=document.getElementById('redo');
-if(!undo||!redo)return;
-const MAX=75;
-let entries=[],cursor=0,restoring=false;
-const snapshot=()=>{const raw=A.ser();return typeof raw==='string'?raw:JSON.stringify(raw)};
-const notify=(msg)=>{try{A.say?.(msg)}catch(e){console.warn(e)}};
-function buttons(){undo.disabled=cursor<=0;redo.disabled=cursor>=entries.length-1;
- undo.title=undo.disabled?'No earlier drawing action':'Undo latest drawing action';
- redo.title=redo.disabled?'Nothing to redo':'Redo last undone drawing action';}
-function reset(label){if(restoring)return;try{entries=[snapshot()];cursor=0;buttons();if(label)notify(label)}catch(err){console.error('Drawing history initialization:',err)}}
-// All architecture and ordinary-model actions commit through SI.commit.
-// Store immutable, complete project snapshots, including parametric wall definitions.
-const previousCommit=A.commit.bind(A);
-A.commit=function(label){
- if(restoring)return;
- let next;
- try{next=snapshot()}catch(err){console.error('Cannot record drawing:',err);return}
- if(!entries.length){entries=[next];cursor=0;buttons();return}
- if(entries[cursor]===next){buttons();return}
- entries.splice(cursor+1);
- entries.push(next);
- if(entries.length>MAX){entries.shift();cursor=Math.max(0,cursor-1)}
- cursor=entries.length-1;
- // Retain original status/side effects, but do not depend on its competing history stacks.
- // Preserve autosave, dirty-state tracking, and legacy commit side effects.
- // Undo and Redo clicks are intercepted by this journal, not the legacy stacks.
- try{previousCommit(label)}catch(err){console.warn('Legacy commit side effect:',err)}
- buttons();
- try{A.refreshAll?.()}catch(e){console.warn('Inspector refresh:',e)}
- notify(label||'Drawing updated');
- window.dispatchEvent(new CustomEvent('si-drawing-history-change',{detail:{cursor,total:entries.length,label}}));
+const A=window.SI,undo=document.getElementById('undo'),redo=document.getElementById('redo');
+if(!A?.ser||!A?.des||!A?.commit||!undo||!redo)return;
+const LIMIT=80;let history=[],index=0,restoring=false,epoch=0;
+function snapshot(){const raw=A.ser();return typeof raw==='string'?raw:JSON.stringify(raw)}
+function status(s){try{A.say?.(s)}catch(e){console.warn(e)}}
+function controls(){undo.disabled=index===0;redo.disabled=index>=history.length-1;undo.title=undo.disabled?'Nothing to undo':'Undo last edit';redo.title=redo.disabled?'Nothing to redo':'Redo last edit'}
+function init(){if(restoring)return;try{history=[snapshot()];index=0;controls()}catch(e){console.error('History init failed',e)}}
+function record(label){if(restoring)return;let next;try{next=snapshot()}catch(e){console.error('History capture failed',e);return}
+if(!history.length){history=[next];index=0}
+else if(history[index]!==next){history=history.slice(0,index+1);history.push(next);if(history.length>LIMIT)history.shift();index=history.length-1}
+controls();status(label||'Scene changed');}
+const legacyCommit=A.commit.bind(A);
+A.commit=function(label){if(restoring)return;
+// Legacy commit owns autosave and status, but history is recorded only once and after it runs.
+try{legacyCommit(label)}catch(e){console.warn('Legacy commit:',e)}
+record(label);
+// Some architectural operations rebuild their mesh on a microtask or the next frame.
+// Capture the settled result, replacing the last snapshot rather than adding a duplicate action.
+const at=index,stamp=++epoch;
+requestAnimationFrame(()=>{if(restoring||stamp!==epoch||at!==index)return;try{const settled=snapshot();if(settled!==history[index]){history[index]=settled;controls()}}catch(e){console.warn('Settled history capture:',e)}});
 };
-function restore(to,label){
- if(restoring||to<0||to>=entries.length||to===cursor)return;
- const from=cursor,backup=entries[from];restoring=true;
- try{
-  A.des(entries[to]);
-  // Confirm the restored data matches the source snapshot after reconstruction.
-  // Some visual-only settings may normalize during loading; do not falsely require byte identity.
-  cursor=to;buttons();
-  try{A.refreshAll?.()}catch(e){console.warn(e)}
-  window.SI_VIEWPORT_GIZMO?.refresh?.();
-  window.SI_MODEL_HIERARCHY?.();
-  notify(label);
-  window.dispatchEvent(new CustomEvent('si-drawing-history-change',{detail:{cursor,total:entries.length,label}}));
- }catch(err){console.error(label+' restoration failed:',err);cursor=from;
-  try{A.des(backup)}catch(e){console.error('History rollback failed:',e)}
-  buttons();notify(label+' failed — previous drawing retained');
- }finally{queueMicrotask(()=>{restoring=false;buttons()})}
+function restore(target,label){if(restoring||target<0||target>=history.length||target===index)return;
+const before=index;const backup=history[before];restoring=true;++epoch;
+try{A.des(history[target]);index=target;controls();A.refreshAll?.();window.SI_VIEWPORT_GIZMO?.refresh?.();status(label);}
+catch(err){console.error(label+' failed',err);index=before;try{A.des(backup)}catch(e){console.error('Rollback failed',e)}controls();status(label+' failed')}
+finally{setTimeout(()=>{restoring=false;controls()},60)}
 }
-function intercept(button,dir,label){button.addEventListener('click',e=>{
- e.preventDefault();e.stopImmediatePropagation();restore(cursor+dir,label);
- },true)}
-intercept(undo,-1,'Undo');intercept(redo,1,'Redo');
-// Legacy key handlers are intercepted before they can operate a different history stack.
-document.addEventListener('keydown',e=>{
- if(!(e.ctrlKey||e.metaKey)||e.altKey||e.key.toLowerCase()!=='z')return;
- e.preventDefault();e.stopImmediatePropagation();restore(cursor+(e.shiftKey?1:-1),e.shiftKey?'Redo':'Undo');
-},true);
-document.addEventListener('keydown',e=>{
- if(!(e.ctrlKey||e.metaKey)||e.altKey||e.key.toLowerCase()!=='y')return;
- e.preventDefault();e.stopImmediatePropagation();restore(cursor+1,'Redo');
-},true);
-// Explicit new/open/demo operations constitute a new document history baseline.
-window.addEventListener('si-deserialized',()=>{if(!restoring)queueMicrotask(()=>{if(!restoring)reset()})});
-// Project reset code may omit the deserialized event; expose a safe reset hook.
-window.SI_DRAWING_HISTORY={reset,undo:()=>restore(cursor-1,'Undo'),redo:()=>restore(cursor+1,'Redo'),
- inspect:()=>({actions:entries.length,index:cursor,canUndo:cursor>0,canRedo:cursor<entries.length-1})};
-reset();
+function capture(button,delta,label){button.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();restore(index+delta,label)},true)}
+capture(undo,-1,'Undo');capture(redo,1,'Redo');
+document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.altKey)return;const k=e.key.toLowerCase();if(k!=='z'&&k!=='y')return;e.preventDefault();e.stopImmediatePropagation();restore(index+(k==='y'||e.shiftKey?1:-1),k==='y'||e.shiftKey?'Redo':'Undo')},true);
+// Scene restoration emits si-deserialized too; never wipe redo on that notification.
+// Explicit New/Open/Load Demo commands can call reset() to establish a new baseline.
+window.SI_DRAWING_HISTORY={reset:init,undo:()=>restore(index-1,'Undo'),redo:()=>restore(index+1,'Redo'),inspect:()=>({actions:history.length,index,canUndo:index>0,canRedo:index<history.length-1,bytes:history[index]?.length||0}),capture:record};
+init();
 })();
 </script>
 </body></html>
