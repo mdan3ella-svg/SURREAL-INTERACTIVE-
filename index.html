@@ -1642,9 +1642,77 @@ pane.querySelector('#archDraw').onclick=()=>{state.tool='wall';state.draft=null;
 A.R.domElement.addEventListener('pointerdown',e=>{if(state.tool!=='wall'||e.button!==0)return;const p=groundHit(e);if(!p){status('No ground-plane intersection · change view');return}e.preventDefault();e.stopImmediatePropagation();if(state.draft)addWall(state.draft,p);state.draft=p;status('Waypoint '+p.map(a=>a.toFixed(2)).join(', ')+' · click next point');},true);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.tool==='wall')stop()});
 const baseSer=A.ser.bind(A),baseDes=A.des.bind(A);
-A.ser=function(){const out=baseSer();out.architecture={version:1,params:Object.fromEntries(keys.map(k=>[k,state[k]])),elements:state.items.map(i=>({id:i.id,kind:i.kind,path:i.path,width:i.width,height:i.height,level:i.level,openings:i.openings}))};return out};
-A.des=function(data){baseDes(data);if(root.parent!==A.world)A.world.add(root);const a=data?.architecture;if(a?.params)Object.assign(state,a.params);state.items=[];root.clear();if(a?.elements?.length){const stale=[];A.world.traverse(o=>{if(o!==root&&o!==A.world&&o.userData?.arch)stale.push(o)});for(const o of stale){if(o.parent)o.parent.remove(o);const idx=A.objs.indexOf(o);if(idx>=0)A.objs.splice(idx,1)}}if(!a?.elements?.length)return;for(const o of a.elements){if(o.kind!=='wall')continue;const g=group('Restored parametric wall');const it={...o,group:g};state.items.push(it);updateWall(it)}window.SI_MODEL_HIERARCHY?.()};
+// SI's public serialization contract is a JSON string. Never attach fields directly
+// to that string; normalize both envelope and scene forms before restoring.
+A.ser=function(){
+ const original=baseSer();
+ const out=typeof original==='string'?JSON.parse(original):structuredClone(original);
+ out.architecture={version:1,params:Object.fromEntries(keys.map(k=>[k,state[k]])),elements:state.items.map(i=>({id:i.id,kind:i.kind,path:i.path,width:i.width,height:i.height,level:i.level,openings:i.openings}))};
+ return JSON.stringify(out);
+};
+A.des=function(input){
+ const parsed=typeof input==='string'?JSON.parse(input):input;
+ const data=parsed?.scene && !parsed?.objs ? parsed.scene : parsed;
+ if(!data||typeof data!=='object')throw Error('Invalid architectural project data');
+ // Deserializing calls the base scene restore first, then reconstitutes editable
+ // parametric wall metadata without duplicating serialized wall mesh objects.
+ baseDes(JSON.stringify(data));
+ if(root.parent!==A.world)A.world.add(root);
+ root.clear();state.items=[];state.draft=null;counter=1;
+ const a=data.architecture;
+ if(a?.params)Object.assign(state,a.params);
+ if(a?.elements?.length){
+  const stale=[];
+  A.world.traverse(o=>{if(o!==root&&o!==A.world&&o.userData?.arch)stale.push(o)});
+  for(const o of stale){if(o.parent)o.parent.remove(o);const idx=A.objs.indexOf(o);if(idx>=0)A.objs.splice(idx,1)}
+  for(const o of a.elements){if(o.kind!=='wall'||!Array.isArray(o.path)||o.path.length!==2)continue;
+   const g=group('Restored parametric wall');const it={...o,group:g,openings:Array.isArray(o.openings)?o.openings:[]};state.items.push(it);updateWall(it)}
+ }
+ window.SI_MODEL_HIERARCHY?.();
+};
 window.SI_ARCHITECTURE={state,addWall,opening,roof,sweep,snapPoint,stop,open:()=>pane.classList.add('open')};
 })();
-</script></body></html>
+</script><style id="si-origin-style">
+#siOriginStrip{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;padding:3px 8px;border-left:1px solid #cbd5d9}
+#siOriginStrip button{min-height:29px;padding:5px 10px;border:1px solid #b9cbd2;background:#fff;color:#1f4656;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer}
+#siOriginStrip button:hover,#siOriginStrip button:focus-visible{background:#e6f0f3;outline:2px solid #8bafbd;outline-offset:1px}
+#siOriginStrip .si-origin-active{background:#254b5c;color:#fff;border-color:#254b5c}
+#siOriginCoordinates{font-size:11px;color:#496272;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media(max-width:820px){#siOriginCoordinates{display:none}#siOriginStrip{padding:2px 4px}}
+</style>
+<script id="si-origin-fix-script">
+(()=>{'use strict';
+const A=window.SI; if(!A?.world||!A?.THREE||!A?.orb)return;
+const T=A.THREE;
+const origin=new T.Vector3(0,0,0);
+const bar=document.querySelector('#siImportStrip')||document.querySelector('#siViewTools')||document.querySelector('#siFitImported')?.parentElement;
+if(!bar)return;
+const strip=document.createElement('span');strip.id='siOriginStrip';
+strip.innerHTML='<button type="button" id="siFitBuilding" title="Frame architectural model, ignoring site landscape and auxiliary props">Fit building</button><button type="button" id="siFitSelected" title="Center orbit around current selected object">Fit selection</button><button type="button" id="siGoOrigin" title="Aim at world origin (0,0,0)">XYZ origin</button><button type="button" id="siOriginAxes" title="Toggle XYZ axes at the world origin">XYZ axes</button><span id="siOriginCoordinates" aria-live="polite">Pivot X 0 · Y 0 · Z 0</span>';
+bar.appendChild(strip);
+const marker=new T.AxesHelper(3);marker.name='SI World Axes';marker.visible=false;marker.userData.siViewportHelper=true;A.S.add(marker);
+const out=strip.querySelector('#siOriginCoordinates');
+const excluded=o=>{let p=o;while(p&&p!==A.world){if(p.userData?.siViewportHelper||p.userData?.siLandscape||p.userData?.siWater||p.userData?.siEnvironment||p.userData?.kind==='site'||p.userData?.cls==='landscape'||/^(site plane|ground|water surface|landscape|terrain|tree |shrub |bench |entourage)/i.test(p.name||''))return true;p=p.parent}return false};
+function bounds(root=A.world,buildingOnly=false){const b=new T.Box3(),local=new T.Box3();let count=0;root.updateMatrixWorld(true);root.traverse(o=>{if(!o.isMesh||!o.visible||!o.geometry?.attributes?.position||buildingOnly&&excluded(o))return;let bb=o.geometry.boundingBox;if(!bb){o.geometry.computeBoundingBox();bb=o.geometry.boundingBox}if(!bb)return;local.copy(bb).applyMatrix4(o.matrixWorld);if(![local.min.x,local.min.y,local.min.z,local.max.x,local.max.y,local.max.z].every(Number.isFinite))return;b.union(local);count++});return count?b:null}
+function frame(b,orientation){if(!b)return false;const center=b.getCenter(new T.Vector3()),size=b.getSize(new T.Vector3());const aspect=Math.max(.5,(A.cam.aspect||1));const fov=T.MathUtils.degToRad(A.cam.fov||45);const vertical=Math.max(.2,size.y)/(2*Math.tan(fov/2));const horizontal=Math.max(.2,Math.max(size.x,size.z))/(2*Math.tan(fov/2)*aspect);const distance=Math.max(5,vertical,horizontal,size.length()*.65)*1.48;
+const off=(orientation||new T.Vector3(1,.6,1)).normalize().multiplyScalar(distance);
+A.orb.tgt.copy(center);A.orb.r=distance;A.orb.th=Math.atan2(off.x,off.z);A.orb.ph=Math.acos(T.MathUtils.clamp(off.y/distance,-.999,.999));
+A.cam.position.copy(center).add(off);A.cam.lookAt(center);A.cam.near=Math.max(.01,distance/3000);A.cam.far=Math.max(2000,distance+size.length()*8);A.cam.updateProjectionMatrix();A.resize?.();updateLabel();return true}
+function updateLabel(){const p=A.orb.tgt;out.textContent=`Pivot X ${p.x.toFixed(2)} · Y ${p.y.toFixed(2)} · Z ${p.z.toFixed(2)}`}
+function fitBuilding(){let b=bounds(A.world,true);if(!b)b=bounds(A.world);if(!frame(b)){A.say?.('Nothing to frame: create or import model geometry');return}A.say?.('Camera centered on model geometry')}
+function fitSelection(){const sel=A.selected;if(sel){const b=bounds(sel)||new T.Box3().setFromObject(sel);if(frame(b)){A.say?.('Orbit pivot set to selection');return}}fitBuilding()}
+function goOrigin(){const diff=A.cam.position.clone().sub(A.orb.tgt);if(diff.lengthSq()<.1)diff.set(12,9,12);const dist=Math.max(10,diff.length());const dir=diff.normalize().multiplyScalar(dist);A.orb.tgt.copy(origin);A.orb.r=dist;A.orb.th=Math.atan2(dir.x,dir.z);A.orb.ph=Math.acos(T.MathUtils.clamp(dir.y/dist,-.999,.999));A.cam.position.copy(dir);A.cam.lookAt(origin);updateLabel();A.say?.('World origin: X 0, Y 0, Z 0')}
+strip.querySelector('#siFitBuilding').onclick=fitBuilding;
+strip.querySelector('#siFitSelected').onclick=fitSelection;
+strip.querySelector('#siGoOrigin').onclick=goOrigin;
+strip.querySelector('#siOriginAxes').onclick=e=>{marker.visible=!marker.visible;e.currentTarget.classList.toggle('si-origin-active',marker.visible)};
+const existingFit=document.querySelector('#siFitImported');if(existingFit)existingFit.onclick=fitBuilding;
+window.SI_FIT_BUILDING=fitBuilding;window.SI_FIT_SELECTION=fitSelection;
+window.addEventListener('si-commercial-demo-ready',()=>requestAnimationFrame(()=>{fitBuilding()}));
+window.addEventListener('si-deserialized',()=>requestAnimationFrame(()=>{if(A.objs?.length)fitBuilding()}));
+window.addEventListener('si-select',updateLabel);
+updateLabel();
+})();
+</script>
+</body></html>
 
